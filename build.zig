@@ -12,10 +12,13 @@ pub fn build(b: *std.build.Builder) !void {
 
     const lib = b.addSharedLibrary(.{
         .name = "pdex",
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = .{ .path = "src/entry.zig" },
         .optimize = optimize,
         .target = .{},
     });
+    const lib_config = b.addOptions();
+    lib_config.addOption(bool, "is_simulated", true);
+    lib.addOptions("config", lib_config);
     _ = writer.addCopyFile(lib.getOutputSource(), "pdex" ++ switch (os_tag) {
         .windows => ".dll",
         .macos => ".dylib",
@@ -29,10 +32,13 @@ pub fn build(b: *std.build.Builder) !void {
     });
     const elf = b.addExecutable(.{
         .name = "pdex.elf",
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = .{ .path = "src/entry.zig" },
         .target = playdate_target,
         .optimize = optimize,
     });
+    const elf_config = b.addOptions();
+    elf_config.addOption(bool, "is_simulated", false);
+    elf.addOptions("config", elf_config);
     elf.force_pic = true;
     elf.link_emit_relocs = true;
     elf.setLinkerScriptPath(.{ .path = "link_map.ld" });
