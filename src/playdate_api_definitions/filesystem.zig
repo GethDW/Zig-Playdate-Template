@@ -117,7 +117,7 @@ pub const File = opaque {
 ///     showhidden: c_int,
 /// ) callconv(.C) c_int,
 pub fn listFilesContext(
-    /// Context should be a container with a method `callback(Context, [*:0]const u8) void`.
+    /// Context should be a container with a method `callback(ctx: *Context, path: [*:0]const u8) void`.
     comptime Context: type,
     path: [*:0]const u8,
     context: *Context,

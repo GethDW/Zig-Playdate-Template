@@ -20,8 +20,10 @@ pub export fn eventHandler(playdate: *pdapi.PlaydateAPI, event: pdapi.system.PDS
     switch (event) {
         .EventInit => {
             pdapi.init(playdate);
-            playdate.system.setUpdateCallback(update, null);
             call("init");
+            if (@hasDecl(main, "update")) {
+                playdate.system.setUpdateCallback(update, null);
+            }
         },
         .EventInitLua => call("initLua"),
         .EventLock => call("lock"),

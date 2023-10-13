@@ -85,15 +85,15 @@ const MenuItemKind = enum {
     checkmark,
     options,
 };
-pub fn MenuItem(comptime Context: type, comptime kind: MenuItemKind) type {
+pub fn MenuItem(comptime Userdata: type, comptime kind: MenuItemKind) type {
     return opaque {
-        const Callback = fn (*Context) void;
+        const Callback = fn (*Userdata) void;
         const Self = @This();
         fn inner(comptime callback: Callback) fn (?*anyopaque) callconv(.C) void {
             return struct {
                 pub fn f(userdata: ?*anyopaque) callconv(.C) void {
-                    if (@sizeOf(Context) != 0) {
-                        const ctx: *Context = @ptrCast(@alignCast(userdata.?));
+                    if (@sizeOf(Userdata) != 0) {
+                        const ctx: *Userdata = @ptrCast(@alignCast(userdata.?));
                         callback(ctx);
                     } else {
                         callback(undefined);
@@ -102,33 +102,33 @@ pub fn MenuItem(comptime Context: type, comptime kind: MenuItemKind) type {
             }.f;
         }
 
-        const newContextFns = struct {
-            pub fn plain(comptime callback: Callback, title: [*:0]const u8, context: *Context) *Self {
+        const newUserdataFns = struct {
+            pub fn plain(comptime callback: Callback, title: [*:0]const u8, context: *Userdata) *Self {
                 return @ptrCast(sys.addMenuItem(title, &inner(callback), context));
             }
-            pub fn checkmark(comptime callback: Callback, title: [*:0]const u8, checked: bool, context: *Context) *Self {
+            pub fn checkmark(comptime callback: Callback, title: [*:0]const u8, checked: bool, context: *Userdata) *Self {
                 return @ptrCast(sys.addCheckmarkMenuItem(title, @intFromBool(checked), &inner(callback), context));
             }
-            pub fn option(comptime callback: Callback, title: [*:0]const u8, options: []const [*:0]const u8, context: *Context) *Self {
+            pub fn option(comptime callback: Callback, title: [*:0]const u8, options: []const [*:0]const u8, context: *Userdata) *Self {
                 return @ptrCast(sys.addOptionsMenuItem(title, options.ptr, @intCast(options.len), &inner(callback), context));
             }
         };
-        pub const newContext = switch (kind) {
-            .plain => newContextFns.plain,
-            .checkmark => newContextFns.checkmark,
-            .options => newContextFns.option,
+        pub const newUserdata = switch (kind) {
+            .plain => newUserdataFns.plain,
+            .checkmark => newUserdataFns.checkmark,
+            .options => newUserdataFns.option,
         };
         const newFns = struct {
             pub fn plain(comptime callback: Callback, title: [*:0]const u8) *Self {
-                if (@sizeOf(Context) != 0) @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call newContext instead.");
+                if (@sizeOf(Userdata) != 0) @compileError("Cannot infer context " ++ @typeName(Userdata) ++ ", call newUserdata instead.");
                 return @ptrCast(sys.addMenuItem(title, &inner(callback), null));
             }
             pub fn checkmark(comptime callback: Callback, title: [*:0]const u8, checked: bool) *Self {
-                if (@sizeOf(Context) != 0) @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call newContext instead.");
+                if (@sizeOf(Userdata) != 0) @compileError("Cannot infer context " ++ @typeName(Userdata) ++ ", call newUserdata instead.");
                 return @ptrCast(sys.addCheckmarkMenuItem(title, @intFromBool(checked), &inner(callback), null));
             }
             pub fn option(comptime callback: Callback, title: [*:0]const u8, options: []const [*:0]const u8) *Self {
-                if (@sizeOf(Context) != 0) @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call newContext instead.");
+                if (@sizeOf(Userdata) != 0) @compileError("Cannot infer context " ++ @typeName(Userdata) ++ ", call newUserdata instead.");
                 return @ptrCast(sys.addOptionsMenuItem(title, options.ptr, @intCast(options.len), &inner(callback), null));
             }
         };
@@ -181,13 +181,13 @@ pub fn MenuItem(comptime Context: type, comptime kind: MenuItemKind) type {
             sys.setMenuItemTitle(@ptrCast(self), title);
         }
 
-        pub fn getContext(self: *Self) *Context {
-            if (@sizeOf(Context) == 0) return undefined;
+        pub fn getUserdata(self: *Self) *Userdata {
+            if (@sizeOf(Userdata) == 0) return undefined;
             return @ptrCast(@alignCast(sys.getMenuItemUserdata(@ptrCast(self)).?));
         }
 
-        pub fn setContext(self: *Self, new_context: *Context) void {
-            if (@sizeOf(Context) != 0) {
+        pub fn setUserdata(self: *Self, new_context: *Userdata) void {
+            if (@sizeOf(Userdata) != 0) {
                 sys.setMenuItemUserdata(@ptrCast(self), new_context);
             }
         }
@@ -198,9 +198,6 @@ pub fn MenuItem(comptime Context: type, comptime kind: MenuItemKind) type {
     };
 }
 
-const PDMenuItem = opaque {};
-const PDCallbackFunction = fn (userdata: *anyopaque) callconv(.C) c_int;
-const PDMenuItemCallbackFunction = fn (userdata: *anyopaque) callconv(.C) void;
 pub const PDSystemEvent = enum(c_int) {
     EventInit,
     EventInitLua,
@@ -253,6 +250,10 @@ pub fn init(pdsys: *const PlaydateSys) void {
     log = pdsys.logToConsole;
     err = pdsys.@"error";
 }
+
+const PDMenuItem = opaque {};
+const PDCallbackFunction = fn (userdata: *anyopaque) callconv(.C) c_int;
+const PDMenuItemCallbackFunction = fn (userdata: *anyopaque) callconv(.C) void;
 
 pub const PlaydateSys = extern struct {
     realloc: *const fn (ptr: ?*anyopaque, size: usize) callconv(.C) ?*anyopaque,

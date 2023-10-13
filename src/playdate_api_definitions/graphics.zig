@@ -47,7 +47,16 @@ pub const Bitmap = opaque {
     pub fn copy(self: *Bitmap) error{OutOfMemory}!*Bitmap {
         return gfx.copyBitmap(self) orelse error.OutOfMemory;
     }
-    // loadIntoBitmap: *const fn (path: [*c]const u8, bitmap: ?*graphics.Bitmap, outerr: ?*[*c]const u8) callconv(.C) void,
+    // loadIntoBitmap: *const fn (path: [*:0]const u8, bitmap: ?*graphics.Bitmap, outerr: ?*[*:0]const u8) callconv(.C) void,
+    pub fn loadInto(self: *Bitmap, path: [*:0]const u8) error{LoadFail}!void {
+        var out_err: [*:0]const u8 = undefined;
+        if (gfx.loadIntoBitmap(path, self, &out_err)) |ptr| {
+            return ptr;
+        } else {
+            pdapi.system.log("error: failed to load bitmap, %s", out_err);
+            return error.FileNotFound;
+        }
+    }
     // getBitmapData: *const fn (bitmap: ?*graphics.Bitmap, width: ?*c_int, height: ?*c_int, rowbytes: ?*c_int, mask: ?*[*c]u8, data: ?*[*c]u8) callconv(.C) void,
     // clearBitmap: *const fn (bitmap: ?*graphics.Bitmap, bgcolor: graphics.LCDColor) callconv(.C) void,
     // rotatedBitmap: *const fn (bitmap: ?*graphics.Bitmap, rotation: f32, xscale: f32, yscale: f32, allocedSize: ?*c_int) callconv(.C) ?*graphics.Bitmap,
@@ -144,28 +153,28 @@ pub const Playdategraphics = extern struct {
     freeBitmap: *const fn (bitmap: ?*Bitmap) callconv(.C) void,
     loadBitmap: *const fn (path: [*:0]const u8, outerr: ?*[*:0]const u8) callconv(.C) ?*Bitmap,
     copyBitmap: *const fn (bitmap: ?*Bitmap) callconv(.C) ?*Bitmap,
-    loadIntoBitmap: *const fn (path: [*c]const u8, bitmap: ?*Bitmap, outerr: ?*[*c]const u8) callconv(.C) void,
-    getBitmapData: *const fn (bitmap: ?*Bitmap, width: ?*c_int, height: ?*c_int, rowbytes: ?*c_int, mask: ?*[*c]u8, data: ?*[*c]u8) callconv(.C) void,
+    loadIntoBitmap: *const fn (path: [*:0]const u8, bitmap: *Bitmap, outerr: ?*[*:0]const u8) callconv(.C) void,
+    getBitmapData: *const fn (bitmap: *Bitmap, width: ?*c_int, height: ?*c_int, rowbytes: ?*c_int, mask: ?*[*c]u8, data: ?*[*c]u8) callconv(.C) void,
     clearBitmap: *const fn (bitmap: ?*Bitmap, bgcolor: LCDColor) callconv(.C) void,
     rotatedBitmap: *const fn (bitmap: ?*Bitmap, rotation: f32, xscale: f32, yscale: f32, allocedSize: ?*c_int) callconv(.C) ?*Bitmap,
 
     // BitmapTable
     newBitmapTable: *const fn (count: c_int, width: c_int, height: c_int) callconv(.C) ?*BitmapTable,
     freeBitmapTable: *const fn (table: ?*BitmapTable) callconv(.C) void,
-    loadBitmapTable: *const fn (path: [*c]const u8, outerr: ?*[*c]const u8) callconv(.C) ?*BitmapTable,
-    loadIntoBitmapTable: *const fn (path: [*c]const u8, table: ?*BitmapTable, outerr: ?*[*c]const u8) callconv(.C) void,
+    loadBitmapTable: *const fn (path: [*:0]const u8, outerr: ?*[*:0]const u8) callconv(.C) ?*BitmapTable,
+    loadIntoBitmapTable: *const fn (path: [*:0]const u8, table: ?*BitmapTable, outerr: ?*[*:0]const u8) callconv(.C) void,
     getTableBitmap: *const fn (table: ?*BitmapTable, idx: c_int) callconv(.C) ?*Bitmap,
 
     // LCDFont
-    loadFont: *const fn (path: [*c]const u8, outErr: ?*[*c]const u8) callconv(.C) ?*LCDFont,
+    loadFont: *const fn (path: [*:0]const u8, outErr: ?*[*:0]const u8) callconv(.C) ?*LCDFont,
     getFontPage: *const fn (font: ?*LCDFont, c: u32) callconv(.C) ?*LCDFontPage,
     getPageGlyph: *const fn (page: ?*LCDFontPage, c: u32, bitmap: ?**Bitmap, advance: ?*c_int) callconv(.C) ?*LCDFontGlyph,
     getGlyphKerning: *const fn (glyph: ?*LCDFontGlyph, glyphcode: u32, nextcode: u32) callconv(.C) c_int,
     getTextWidth: *const fn (font: ?*LCDFont, text: ?*const anyopaque, len: usize, encoding: pdapi.system.PDStringEncoding, tracking: c_int) callconv(.C) c_int,
 
     // raw framebuffer access
-    getFrame: *const fn () callconv(.C) [*c]u8, // row stride = LCD_ROWSIZE
-    getDisplayFrame: *const fn () callconv(.C) [*c]u8, // row stride = LCD_ROWSIZE
+    getFrame: *const fn () callconv(.C) [*]u8, // row stride = LCD_ROWSIZE
+    getDisplayFrame: *const fn () callconv(.C) [*]u8, // row stride = LCD_ROWSIZE
     getDebugBitmap: *const fn () callconv(.C) ?*Bitmap, // valid in simulator only, function is null on device
     copyFrameBufferBitmap: *const fn () callconv(.C) ?*Bitmap,
     markUpdatedRows: *const fn (start: c_int, end: c_int) callconv(.C) void,
@@ -179,20 +188,20 @@ pub const Playdategraphics = extern struct {
     setScreenClipRect: *const fn (x: c_int, y: c_int, width: c_int, height: c_int) callconv(.C) void,
 
     // 1.1.1
-    fillPolygon: *const fn (nPoints: c_int, coords: [*c]c_int, color: LCDColor, fillRule: LCDPolygonFillRule) callconv(.C) void,
-    getFontHeight: *const fn (font: ?*LCDFont) callconv(.C) u8,
+    fillPolygon: *const fn (nPoints: c_int, coords: [*]c_int, color: LCDColor, fillRule: LCDPolygonFillRule) callconv(.C) void,
+    getFontHeight: *const fn (font: *LCDFont) callconv(.C) u8,
 
     // 1.7
     getDisplayBufferBitmap: *const fn () callconv(.C) ?*Bitmap,
-    drawRotatedBitmap: *const fn (bitmap: ?*Bitmap, x: c_int, y: c_int, rotation: f32, centerx: f32, centery: f32, xscale: f32, yscale: f32) callconv(.C) void,
+    drawRotatedBitmap: *const fn (bitmap: *Bitmap, x: c_int, y: c_int, rotation: f32, centerx: f32, centery: f32, xscale: f32, yscale: f32) callconv(.C) void,
     setTextLeading: *const fn (lineHeightAdustment: c_int) callconv(.C) void,
 
     // 1.8
-    setBitmapMask: *const fn (bitmap: ?*Bitmap, mask: ?*Bitmap) callconv(.C) c_int,
-    getBitmapMask: *const fn (bitmap: ?*Bitmap) callconv(.C) ?*Bitmap,
+    setBitmapMask: *const fn (bitmap: *Bitmap, mask: *Bitmap) callconv(.C) c_int,
+    getBitmapMask: *const fn (bitmap: *Bitmap) callconv(.C) ?*Bitmap,
 
     // 1.10
-    setStencilImage: *const fn (stencil: ?*Bitmap, tile: c_int) callconv(.C) void,
+    setStencilImage: *const fn (stencil: *Bitmap, tile: c_int) callconv(.C) void,
 
     // 1.12
     makeFontFromData: *const fn (data: *LCDFontData, wide: c_int) callconv(.C) *LCDFont,

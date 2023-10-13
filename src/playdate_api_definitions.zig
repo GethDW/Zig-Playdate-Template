@@ -5,6 +5,7 @@ pub const graphics = @import("playdate_api_definitions/graphics.zig");
 pub const system = @import("playdate_api_definitions/system.zig");
 pub const input = @import("playdate_api_definitions/input.zig");
 pub const filesystem = @import("playdate_api_definitions/filesystem.zig");
+pub const lua = @import("playdate_api_definitions/lua.zig");
 
 pub fn init(pd: *PlaydateAPI) void {
     system.init(pd.system);
@@ -12,6 +13,7 @@ pub fn init(pd: *PlaydateAPI) void {
     graphics.init(pd.graphics);
     filesystem.init(pd.file);
     input.init(pd.system);
+    lua.init(pd.lua);
 }
 
 pub const PlaydateAPI = extern struct {
@@ -21,7 +23,7 @@ pub const PlaydateAPI = extern struct {
     sprite: *const sprite.PlaydateSprite,
     display: *const PlaydateDisplay,
     sound: *const PlaydateSound,
-    lua: *const PlaydateLua,
+    lua: *const lua.PlaydateLua,
     json: *const PlaydateJSON,
     scoreboards: *const scoreboards.PlaydateScoreboards,
 };
@@ -548,89 +550,6 @@ pub const PlaydateSoundEffectOverdrive = extern struct {
     setOffset: *const fn (o: ?*Overdrive, offset: f32) callconv(.C) void,
     setOffsetModulator: *const fn (o: ?*Overdrive, mod: ?*PDSynthSignalValue) callconv(.C) void,
     getOffsetModulator: *const fn (o: ?*Overdrive) callconv(.C) ?*PDSynthSignalValue,
-};
-
-////////Lua///////
-pub const LuaState = ?*anyopaque;
-pub const LuaCFunction = ?*const fn (state: ?*LuaState) callconv(.C) c_int;
-pub const LuaUDObject = opaque {};
-
-//literal value
-pub const LValType = enum(c_int) {
-    Int = 0,
-    Float = 1,
-    Str = 2,
-};
-pub const LuaReg = extern struct {
-    name: [*c]const u8,
-    func: LuaCFunction,
-};
-pub const LuaType = enum(c_int) {
-    TypeNil = 0,
-    TypeBool = 1,
-    TypeInt = 2,
-    TypeFloat = 3,
-    TypeString = 4,
-    TypeTable = 5,
-    TypeFunction = 6,
-    TypeThread = 7,
-    TypeObject = 8,
-};
-pub const LuaVal = extern struct {
-    name: [*c]const u8,
-    type: LValType,
-    v: extern union {
-        intval: c_uint,
-        floatval: f32,
-        strval: [*c]const u8,
-    },
-};
-pub const PlaydateLua = extern struct {
-    // these two return 1 on success, else 0 with an error message in outErr
-    addFunction: *const fn (f: LuaCFunction, name: [*c]const u8, outErr: ?*[*c]const u8) callconv(.C) c_int,
-    registerClass: *const fn (name: [*c]const u8, reg: ?*const LuaReg, vals: [*c]const LuaVal, isstatic: c_int, outErr: ?*[*c]const u8) callconv(.C) c_int,
-
-    pushFunction: *const fn (f: LuaCFunction) callconv(.C) void,
-    indexMetatable: *const fn () callconv(.C) c_int,
-
-    stop: *const fn () callconv(.C) void,
-    start: *const fn () callconv(.C) void,
-
-    // stack operations
-    getArgCount: *const fn () callconv(.C) c_int,
-    getArgType: *const fn (pos: c_int, outClass: ?*[*c]const u8) callconv(.C) LuaType,
-
-    argIsNil: *const fn (pos: c_int) callconv(.C) c_int,
-    getArgBool: *const fn (pos: c_int) callconv(.C) c_int,
-    getArgInt: *const fn (pos: c_int) callconv(.C) c_int,
-    getArgFloat: *const fn (pos: c_int) callconv(.C) f32,
-    getArgString: *const fn (pos: c_int) callconv(.C) [*c]const u8,
-    getArgBytes: *const fn (pos: c_int, outlen: ?*usize) callconv(.C) [*c]const u8,
-    getArgObject: *const fn (pos: c_int, type: ?*i8, ?*?*LuaUDObject) callconv(.C) ?*anyopaque,
-
-    getBitmap: *const fn (c_int) callconv(.C) ?*graphics.Bitmap,
-    getSprite: *const fn (c_int) callconv(.C) ?*sprite.Sprite,
-
-    // for returning values back to Lua
-    pushNil: *const fn () callconv(.C) void,
-    pushBool: *const fn (val: c_int) callconv(.C) void,
-    pushInt: *const fn (val: c_int) callconv(.C) void,
-    pushFloat: *const fn (val: f32) callconv(.C) void,
-    pushString: *const fn (str: [*c]const u8) callconv(.C) void,
-    pushBytes: *const fn (str: [*c]const u8, len: usize) callconv(.C) void,
-    pushBitmap: *const fn (bitmap: ?*graphics.Bitmap) callconv(.C) void,
-    pushSprite: *const fn (sprite: ?*sprite.Sprite) callconv(.C) void,
-
-    pushObject: *const fn (obj: ?*anyopaque, type: ?*i8, nValues: c_int) callconv(.C) ?*LuaUDObject,
-    retainObject: *const fn (obj: ?*LuaUDObject) callconv(.C) ?*LuaUDObject,
-    releaseObject: *const fn (obj: ?*LuaUDObject) callconv(.C) void,
-
-    setObjectValue: *const fn (obj: ?*LuaUDObject, slot: c_int) callconv(.C) void,
-    getObjectValue: *const fn (obj: ?*LuaUDObject, slot: c_int) callconv(.C) c_int,
-
-    // calling lua from C has some overhead. use sparingly!
-    callFunction_deprecated: *const fn (name: [*c]const u8, nargs: c_int) callconv(.C) void,
-    callFunction: *const fn (name: [*c]const u8, nargs: c_int, outerr: ?*[*c]const u8) callconv(.C) c_int,
 };
 
 ///////JSON///////
