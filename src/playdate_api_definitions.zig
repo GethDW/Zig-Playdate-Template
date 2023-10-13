@@ -3,7 +3,6 @@ const builtin = @import("builtin");
 pub const sprite = @import("playdate_api_definitions/sprite.zig");
 pub const graphics = @import("playdate_api_definitions/graphics.zig");
 pub const system = @import("playdate_api_definitions/system.zig");
-pub const input = @import("playdate_api_definitions/input.zig");
 pub const filesystem = @import("playdate_api_definitions/filesystem.zig");
 pub const lua = @import("playdate_api_definitions/lua.zig");
 
@@ -12,7 +11,6 @@ pub fn init(pd: *PlaydateAPI) void {
     sprite.init(pd.sprite);
     graphics.init(pd.graphics);
     filesystem.init(pd.file);
-    input.init(pd.system);
     lua.init(pd.lua);
 }
 

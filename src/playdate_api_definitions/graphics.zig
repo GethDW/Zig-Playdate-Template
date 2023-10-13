@@ -146,7 +146,7 @@ pub const Playdategraphics = extern struct {
     drawEllipse: *const fn (x: c_int, y: c_int, width: c_int, height: c_int, lineWidth: c_int, startAngle: f32, endAngle: f32, color: LCDColor) callconv(.C) void,
     fillEllipse: *const fn (x: c_int, y: c_int, width: c_int, height: c_int, startAngle: f32, endAngle: f32, color: LCDColor) callconv(.C) void,
     drawScaledBitmap: *const fn (bitmap: ?*Bitmap, x: c_int, y: c_int, xscale: f32, yscale: f32) callconv(.C) void,
-    drawText: *const fn (text: ?*const anyopaque, len: usize, encoding: pdapi.system.PDStringEncoding, x: c_int, y: c_int) callconv(.C) c_int,
+    drawText: *const fn (text: ?*const anyopaque, len: usize, encoding: pdapi.system.StringEncoding, x: c_int, y: c_int) callconv(.C) c_int,
 
     // Bitmap
     newBitmap: *const fn (width: c_int, height: c_int, color: LCDColor) callconv(.C) ?*Bitmap,
@@ -170,7 +170,7 @@ pub const Playdategraphics = extern struct {
     getFontPage: *const fn (font: ?*LCDFont, c: u32) callconv(.C) ?*LCDFontPage,
     getPageGlyph: *const fn (page: ?*LCDFontPage, c: u32, bitmap: ?**Bitmap, advance: ?*c_int) callconv(.C) ?*LCDFontGlyph,
     getGlyphKerning: *const fn (glyph: ?*LCDFontGlyph, glyphcode: u32, nextcode: u32) callconv(.C) c_int,
-    getTextWidth: *const fn (font: ?*LCDFont, text: ?*const anyopaque, len: usize, encoding: pdapi.system.PDStringEncoding, tracking: c_int) callconv(.C) c_int,
+    getTextWidth: *const fn (font: ?*LCDFont, text: ?*const anyopaque, len: usize, encoding: pdapi.system.StringEncoding, tracking: c_int) callconv(.C) c_int,
 
     // raw framebuffer access
     getFrame: *const fn () callconv(.C) [*]u8, // row stride = LCD_ROWSIZE

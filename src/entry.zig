@@ -16,24 +16,24 @@ fn call(comptime name: []const u8) void {
         };
     }
 }
-pub export fn eventHandler(playdate: *pdapi.PlaydateAPI, event: pdapi.system.PDSystemEvent, _: u32) callconv(.C) c_int {
+pub export fn eventHandler(playdate: *pdapi.PlaydateAPI, event: pdapi.system.Event, _: u32) callconv(.C) c_int {
     switch (event) {
-        .EventInit => {
+        .Init => {
             pdapi.init(playdate);
             call("init");
             if (@hasDecl(main, "update")) {
                 playdate.system.setUpdateCallback(update, null);
             }
         },
-        .EventInitLua => call("initLua"),
-        .EventLock => call("lock"),
-        .EventUnlock => call("unluck"),
-        .EventPause => call("pause"),
-        .EventResume => call("resume"),
-        .EventTerminate => call("terminate"),
+        .InitLua => call("initLua"),
+        .Lock => call("lock"),
+        .Unlock => call("unluck"),
+        .Pause => call("pause"),
+        .Resume => call("resume"),
+        .Terminate => call("terminate"),
         // TODO
-        .EventKeyPressed, .EventKeyReleased => {},
-        .EventLowPower => call("lowPower"),
+        .KeyPressed, .KeyReleased => {},
+        .LowPower => call("lowPower"),
     }
     return 0;
 }
