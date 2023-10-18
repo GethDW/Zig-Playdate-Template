@@ -673,7 +673,7 @@ pub const JSONEncoder = extern struct {
 };
 
 pub const PlaydateJSON = extern struct {
-    initEncoder: *const fn (encoder: ?*JSONEncoder, write: writeFunc, userdata: ?*anyopaque, pretty: c_int) callconv(.C) void,
+    initEncoder: *const fn (encoder: *JSONEncoder, write: writeFunc, userdata: ?*anyopaque, pretty: c_int) callconv(.C) void,
 
     decode: *const fn (functions: ?*JSONDecoder, reader: JSONReader, outval: ?*JSONValue) callconv(.C) c_int,
     decodeString: *const fn (functions: ?*JSONDecoder, jsonString: [*c]const u8, outval: ?*JSONValue) callconv(.C) c_int,
@@ -708,8 +708,8 @@ pub const scoreboards = struct {
     pub const ScoresCallback = fn (scores: *PDScoresList, errorMessage: [*:0]const u8) callconv(.C) void;
 
     pub const PlaydateScoreboards = extern struct {
-        addScore: *const fn (boardId: [*c]const u8, value: u32, callback: *const AddScoreCallback) callconv(.C) c_int,
-        getPersonalBest: *const fn (boardId: [*c]const u8, callback: *const PersonalBestCallback) callconv(.C) c_int,
+        addScore: *const fn (boardId: [*:0]const u8, value: u32, callback: *const AddScoreCallback) callconv(.C) c_int,
+        getPersonalBest: *const fn (boardId: [*:0]const u8, callback: *const PersonalBestCallback) callconv(.C) c_int,
         freeScore: *const fn (score: ?*PDScore) callconv(.C) void,
 
         getScoreboards: *const fn (callback: *const BoardsListCallback) callconv(.C) c_int,

@@ -234,10 +234,10 @@ pub const PlaydateFile = extern struct {
         userdata: ?*anyopaque,
         showhidden: c_int,
     ) callconv(.C) c_int,
-    stat: *const fn (path: [*:0]const u8, stat: ?*FileStat) callconv(.C) c_int,
+    stat: *const fn (path: [*:0]const u8, stat: *FileStat) callconv(.C) c_int,
     mkdir: *const fn (path: [*:0]const u8) callconv(.C) c_int,
     unlink: *const fn (path: [*:0]const u8, recursive: c_int) callconv(.C) c_int,
-    rename: *const fn (from: [*:0]const u8, to: [*c]const u8) callconv(.C) c_int,
+    rename: *const fn (from: [*:0]const u8, to: [*:0]const u8) callconv(.C) c_int,
 
     open: *const fn (path: [*:0]const u8, options: FileOptions) callconv(.C) ?*File,
     close: *const fn (file: *File) callconv(.C) c_int,

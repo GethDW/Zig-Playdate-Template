@@ -139,11 +139,11 @@ pub const PlaydateLua = extern struct {
     pushSprite: *const fn (sprite: ?*sprite.AnySprite) callconv(.C) void,
 
     pushObject: *const fn (obj: *anyopaque, type: [*:0]const u8, nValues: c_int) callconv(.C) ?*LuaUDObject,
-    retainObject: *const fn (obj: ?*LuaUDObject) callconv(.C) ?*LuaUDObject,
-    releaseObject: *const fn (obj: ?*LuaUDObject) callconv(.C) void,
+    retainObject: *const fn (obj: *LuaUDObject) callconv(.C) ?*LuaUDObject,
+    releaseObject: *const fn (obj: *LuaUDObject) callconv(.C) void,
 
-    setObjectValue: *const fn (obj: ?*LuaUDObject, slot: c_int) callconv(.C) void,
-    getObjectValue: *const fn (obj: ?*LuaUDObject, slot: c_int) callconv(.C) c_int,
+    setObjectValue: *const fn (obj: *LuaUDObject, slot: c_int) callconv(.C) void,
+    getObjectValue: *const fn (obj: *LuaUDObject, slot: c_int) callconv(.C) c_int,
 
     // calling lua from C has some overhead. use sparingly!
     callFunction_deprecated: *const fn (name: [*:0]const u8, nargs: c_int) callconv(.C) void,
