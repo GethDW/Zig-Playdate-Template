@@ -1,5 +1,5 @@
 const std = @import("std");
-const pdapi = @import("../playdate_api_definitions.zig");
+const pdapi = @import("../api.zig");
 const system = pdapi.system;
 
 pub const File = opaque {

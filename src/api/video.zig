@@ -1,4 +1,4 @@
-const pdapi = @import("../playdate_api_definitions.zig");
+const pdapi = @import("../api.zig");
 const system = pdapi.system;
 const graphics = pdapi.graphics;
 

@@ -1,10 +1,10 @@
 const std = @import("std");
 const builtin = @import("builtin");
-pub const sprite = @import("playdate_api_definitions/sprite.zig");
-pub const graphics = @import("playdate_api_definitions/graphics.zig");
-pub const system = @import("playdate_api_definitions/system.zig");
-pub const filesystem = @import("playdate_api_definitions/filesystem.zig");
-pub const lua = @import("playdate_api_definitions/lua.zig");
+pub const sprite = @import("api/sprite.zig");
+pub const graphics = @import("api/graphics.zig");
+pub const system = @import("api/system.zig");
+pub const filesystem = @import("api/filesystem.zig");
+pub const lua = @import("api/lua.zig");
 
 pub fn init(pd: *PlaydateAPI) void {
     system.init(pd.system);

@@ -1,4 +1,4 @@
-const pdapi = @import("../playdate_api_definitions.zig");
+const pdapi = @import("../api.zig");
 
 pub const video = @import("video.zig");
 

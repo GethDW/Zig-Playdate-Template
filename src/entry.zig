@@ -1,7 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const is_simulated = @import("config").is_simulated;
-const pdapi = @import("playdate_api_definitions.zig");
+const pdapi = @import("api.zig");
 const main = @import("main.zig");
 
 fn call(comptime name: []const u8) void {

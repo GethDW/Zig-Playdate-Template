@@ -1,5 +1,5 @@
 const std = @import("std");
-const pdapi = @import("../playdate_api_definitions.zig");
+const pdapi = @import("../api.zig");
 const graphics = pdapi.graphics;
 
 pub fn setAlwaysRedraw(enable: bool) void {
