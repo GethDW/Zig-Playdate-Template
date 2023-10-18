@@ -119,120 +119,201 @@ pub fn isCrankDocked() bool {
     return sys.isCrankDocked() == 1;
 }
 
-const MenuItemKind = enum {
-    plain,
-    checkmark,
-    options,
+pub const AnyMenuItem = opaque {
+    pub fn new(title: [*:0]const u8) *AnyMenuItem {
+        return sys.addMenuItem(title, null, null);
+    }
+    pub fn newWithCallback(title: [*:0]const u8, comptime callback: fn () void) *AnyMenuItem {
+        return sys.addMenuItem(title, &inner(callback), null);
+    }
+    pub fn getTitle(self: *const AnyMenuItem) [*:0]const u8 {
+        sys.getMenuItemTitle(self);
+    }
+    pub fn setTitle(self: *AnyMenuItem, title: [*:0]const u8) void {
+        sys.setMenuItemTitle(self, title);
+    }
+    pub fn remove(self: *AnyMenuItem) void {
+        sys.removeMenuItem(self);
+    }
+
+    fn inner(comptime callback: fn () void) PlaydateSys.PDMenuItemCallbackFunction {
+        return struct {
+            pub fn f(_: ?*anyopaque) callconv(.C) void {
+                callback();
+            }
+        }.f;
+    }
 };
-pub fn MenuItem(comptime Userdata: type, comptime kind: MenuItemKind) type {
+pub fn MenuItem(comptime Userdata: type) type {
     return opaque {
-        const Callback = fn (*Userdata) void;
         const Self = @This();
-        fn inner(comptime callback: Callback) fn (?*anyopaque) callconv(.C) void {
+
+        pub fn new(title: [*:0]const u8, userdata: *Userdata) *Self {
+            return @ptrCast(sys.addMenuItem(title, null, userdata));
+        }
+        pub fn newWithCallback(title: [*:0]const u8, comptime callback: fn (*Userdata) void, userdata: *Userdata) *Self {
+            return @ptrCast(sys.addMenuItem(title, &inner(callback), userdata));
+        }
+        pub fn getTitle(self: *const Self) [*:0]const u8 {
+            return AnyMenuItem.getTitle(@ptrCast(self));
+        }
+        pub fn setTitle(self: *Self, title: [*:0]const u8) void {
+            AnyMenuItem.setTitle(@ptrCast(self), title);
+        }
+        pub fn remove(self: *Self) void {
+            AnyMenuItem.remove(@ptrCast(self));
+        }
+        pub fn getUserdata(self: *Self) *Userdata {
+            return @ptrCast(sys.getMenuItemUserdata(self));
+        }
+        pub fn setUserdata(self: *Self, userdata: *Userdata) void {
+            sys.setMenuItemUserdata(self.any(), userdata);
+        }
+
+        fn inner(comptime callback: fn (*Userdata) void) PlaydateSys.MenuItemCallbackFunction {
             return struct {
-                pub fn f(userdata: ?*anyopaque) callconv(.C) void {
-                    if (@sizeOf(Userdata) != 0) {
-                        const ctx: *Userdata = @ptrCast(@alignCast(userdata.?));
-                        callback(ctx);
-                    } else {
-                        callback(undefined);
-                    }
+                pub fn f(ptr: *anyopaque) callconv(.C) void {
+                    callback(@ptrCast(@alignCast(ptr)));
                 }
             }.f;
         }
+    };
+}
 
-        const newUserdataFns = struct {
-            pub fn plain(comptime callback: Callback, title: [*:0]const u8, context: *Userdata) *Self {
-                return @ptrCast(sys.addMenuItem(title, &inner(callback), context));
-            }
-            pub fn checkmark(comptime callback: Callback, title: [*:0]const u8, checked: bool, context: *Userdata) *Self {
-                return @ptrCast(sys.addCheckmarkMenuItem(title, @intFromBool(checked), &inner(callback), context));
-            }
-            pub fn option(comptime callback: Callback, title: [*:0]const u8, options: []const [*:0]const u8, context: *Userdata) *Self {
-                return @ptrCast(sys.addOptionsMenuItem(title, options.ptr, @intCast(options.len), &inner(callback), context));
-            }
+pub const Checked = enum(u1) { unchecked = 0, checked = 1 };
+pub const AnyCheckmarkMenuItem = opaque {
+    pub fn new(title: [*:0]const u8, checked: Checked) *AnyCheckmarkMenuItem {
+        return @ptrCast(sys.addCheckmarkMenuItem(title, @intFromEnum(checked), null, null));
+    }
+    pub fn newWithCallback(
+        title: [*:0]const u8,
+        checked: Checked,
+        comptime callback: fn () void,
+    ) *AnyCheckmarkMenuItem {
+        return @ptrCast(sys.addCheckmarkMenuItem(
+            title,
+            @intFromEnum(checked),
+            &AnyMenuItem.inner(callback),
+            null,
+        ));
+    }
+    pub fn getTitle(self: *const AnyCheckmarkMenuItem) [*:0]const u8 {
+        return AnyMenuItem.getTitle(@ptrCast(self));
+    }
+    pub fn setTitle(self: *AnyCheckmarkMenuItem, title: [*:0]const u8) void {
+        AnyMenuItem.setTitle(@ptrCast(self), title);
+    }
+    pub fn remove(self: *AnyCheckmarkMenuItem) void {
+        AnyMenuItem.remove(@ptrCast(self));
+    }
+    pub fn getChecked(self: *const AnyCheckmarkMenuItem) Checked {
+        return switch (sys.getMenuItemValue(@ptrCast(self))) {
+            0, 1 => |i| @enumFromInt(i),
+            else => unreachable,
         };
-        pub const newUserdata = switch (kind) {
-            .plain => newUserdataFns.plain,
-            .checkmark => newUserdataFns.checkmark,
-            .options => newUserdataFns.option,
-        };
-        const newFns = struct {
-            pub fn plain(comptime callback: Callback, title: [*:0]const u8) *Self {
-                if (@sizeOf(Userdata) != 0) @compileError("Cannot infer context " ++ @typeName(Userdata) ++ ", call newUserdata instead.");
-                return @ptrCast(sys.addMenuItem(title, &inner(callback), null));
-            }
-            pub fn checkmark(comptime callback: Callback, title: [*:0]const u8, checked: bool) *Self {
-                if (@sizeOf(Userdata) != 0) @compileError("Cannot infer context " ++ @typeName(Userdata) ++ ", call newUserdata instead.");
-                return @ptrCast(sys.addCheckmarkMenuItem(title, @intFromBool(checked), &inner(callback), null));
-            }
-            pub fn option(comptime callback: Callback, title: [*:0]const u8, options: []const [*:0]const u8) *Self {
-                if (@sizeOf(Userdata) != 0) @compileError("Cannot infer context " ++ @typeName(Userdata) ++ ", call newUserdata instead.");
-                return @ptrCast(sys.addOptionsMenuItem(title, options.ptr, @intCast(options.len), &inner(callback), null));
-            }
-        };
-        pub const new = switch (kind) {
-            .plain => newFns.plain,
-            .checkmark => newFns.checkmark,
-            .options => newFns.option,
-        };
+    }
+    pub fn setChecked(self: *AnyCheckmarkMenuItem, checked: Checked) void {
+        sys.setMenuItemValue(self.normal(), @intFromEnum(checked));
+    }
+};
+pub fn CheckmarkMenuItem(comptime Userdata: type) type {
+    return opaque {
+        const Self = @This();
 
-        pub const Value = switch (kind) {
-            .plain => void,
-            .checkmark => bool,
-            .options => usize,
-        };
-        pub fn getValue(self: *const Self) Value {
-            const val = sys.getMenuItemValue(@ptrCast(@constCast(self)));
-            switch (kind) {
-                .plain => return {},
-                .checkmark => return switch (val) {
-                    0 => false,
-                    1 => true,
-                    else => {
-                        err("error: invalid CheckmarkMenuItem value %d", val);
-                        @panic("invalid CheckmarkMenuItem value");
-                    },
-                },
-                .options => return switch (val) {
-                    0...std.math.maxInt(c_int) => |i| @intCast(i),
-                    else => {
-                        err("error: invalid OptionsMenuItem value %d", val);
-                        @panic("invalid OptionsMenuItem value");
-                    },
-                },
-            }
+        pub fn new(title: [*:0]const u8, checked: Checked, userdata: *Userdata) *Self {
+            return @ptrCast(sys.addCheckmarkMenuItem(title, @intFromEnum(checked), null, userdata));
         }
-
-        pub fn setValue(self: *Self, value: Value) void {
-            switch (kind) {
-                .plain => {},
-                .checkmark => sys.setMenuItemValue(@ptrCast(self), @intFromBool(value)),
-                .options => sys.setMenuItemValue(@ptrCast(self), @intCast(value)),
-            }
+        pub fn newWithCallback(
+            title: [*:0]const u8,
+            checked: Checked,
+            comptime callback: fn (*Userdata) void,
+            userdata: *Userdata,
+        ) *Self {
+            return @ptrCast(sys.addCheckmarkMenuItem(
+                title,
+                @intFromEnum(checked),
+                &MenuItem(Userdata).inner(callback),
+                userdata,
+            ));
         }
-
         pub fn getTitle(self: *const Self) [*:0]const u8 {
-            return sys.getMenuItemTitle(@ptrCast(@constCast(self)));
+            return AnyMenuItem.getTitle(@ptrCast(self));
         }
-
         pub fn setTitle(self: *Self, title: [*:0]const u8) void {
-            sys.setMenuItemTitle(@ptrCast(self), title);
+            AnyMenuItem.setTitle(@ptrCast(self), title);
         }
-
-        pub fn getUserdata(self: *Self) *Userdata {
-            if (@sizeOf(Userdata) == 0) return undefined;
-            return @ptrCast(@alignCast(sys.getMenuItemUserdata(@ptrCast(self)).?));
-        }
-
-        pub fn setUserdata(self: *Self, new_context: *Userdata) void {
-            if (@sizeOf(Userdata) != 0) {
-                sys.setMenuItemUserdata(@ptrCast(self), new_context);
-            }
-        }
-
         pub fn remove(self: *Self) void {
-            sys.removeMenuItem(@ptrCast(self));
+            AnyMenuItem.remove(@ptrCast(self));
+        }
+        pub fn getChecked(self: *const Self) Checked {
+            return AnyCheckmarkMenuItem.getChecked(@ptrCast(self));
+        }
+        pub fn setChecked(self: *Self, checked: Checked) void {
+            AnyCheckmarkMenuItem.setChecked(@ptrCast(self), checked);
+        }
+        pub fn getUserdata(self: *Self) *Userdata {
+            return MenuItem(Userdata).getUserdata(@ptrCast(self));
+        }
+        pub fn setUserdata(self: *Self, userdata: *Userdata) void {
+            MenuItem(Userdata).setUserdata(@ptrCast(self), userdata);
+        }
+    };
+}
+
+pub const AnyOptionsMenuItem = opaque {
+    pub fn new(title: [*:0]const u8, options: []const [*:0]const u8) *AnyOptionsMenuItem {
+        return sys.addOptionsMenuItem(title, options.ptr, @intCast(options.len), null, null);
+    }
+    pub fn newWithCallback(title: [*:0]const u8, options: []const [*:0]const u8, comptime callback: fn () void) *AnyOptionsMenuItem {
+        return sys.addOptionsMenuItem(title, options.ptr, @intCast(options.len), &AnyMenuItem.inner(callback), null);
+    }
+    pub fn getTitle(self: *const AnyOptionsMenuItem) [*:0]const u8 {
+        return AnyMenuItem.getTitle(@ptrCast(self));
+    }
+    pub fn setTitle(self: *AnyOptionsMenuItem, title: [*:0]const u8) void {
+        AnyMenuItem.setTitle(@ptrCast(self), title);
+    }
+    pub fn remove(self: *AnyOptionsMenuItem) void {
+        AnyMenuItem.remove(@ptrCast(self));
+    }
+    pub fn getOption(self: *const AnyOptionsMenuItem) usize {
+        const i = sys.getMenuItemValue(@ptrCast(self));
+        return if (i >= 0) @intCast(i) else unreachable;
+    }
+    pub fn setOption(self: *AnyOptionsMenuItem, option: usize) void {
+        sys.setMenuItemValue(@ptrCast(self), @intCast(option));
+    }
+};
+pub fn OptionsMenuItem(comptime Userdata: type) type {
+    return opaque {
+        const Self = @This();
+
+        pub fn new(title: [*:0]const u8, options: []const [*:0]const u8, userdata: *Userdata) *Self {
+            return @ptrCast(sys.addOptionsMenuItem(title, options.ptr, @intCast(options.len), null, userdata));
+        }
+        pub fn newWithCallback(title: [*:0]const u8, options: []const [*:0]const u8, comptime callback: fn (*Userdata) void, userdata: *Userdata) *Self {
+            return @ptrCast(sys.addOptionsMenuItem(title, options.ptr, @intCast(options.len), &MenuItem(Userdata).inner(callback), userdata));
+        }
+        pub fn getTitle(self: *const Self) [*:0]const u8 {
+            return AnyMenuItem.getTitle(@ptrCast(self));
+        }
+        pub fn setTitle(self: *Self, title: [*:0]const u8) void {
+            AnyMenuItem.setTitle(@ptrCast(self), title);
+        }
+        pub fn remove(self: *Self) void {
+            AnyMenuItem.remove(@ptrCast(self));
+        }
+        pub fn getOption(self: *const Self) usize {
+            return AnyOptionsMenuItem.getOption(@ptrCast(self));
+        }
+        pub fn setOption(self: *Self, option: usize) void {
+            AnyOptionsMenuItem.setOption(@ptrCast(self), option);
+        }
+        pub fn getUserdata(self: *Self) *Userdata {
+            return MenuItem(Userdata).getUserdata(@ptrCast(self));
+        }
+        pub fn setUserdata(self: *Self, userdata: *Userdata) void {
+            MenuItem(Userdata).setUserdata(@ptrCast(self), userdata);
         }
     };
 }
@@ -278,7 +359,7 @@ pub const DateTime = extern struct {
 };
 
 ///// RAW BINDINGS /////
-var sys: *const PlaydateSys = undefined;
+pub var sys: *const PlaydateSys = undefined;
 // TODO: pub fn print(comptime fmt: []const u8, args: anytype) void
 //       creates a c-style fmt string at comptime and with type checking
 //       then calls log with @call.
@@ -291,10 +372,8 @@ pub fn init(pdsys: *const PlaydateSys) void {
 }
 
 pub const PlaydateSys = extern struct {
-    const AnyMenuItem = opaque {};
-    const PDCallbackFunction = fn (userdata: *anyopaque) callconv(.C) c_int;
-    const PDMenuItemCallbackFunction = fn (userdata: *anyopaque) callconv(.C) void;
-
+    const CallbackFunction = fn (userdata: ?*anyopaque) callconv(.C) c_int;
+    const MenuItemCallbackFunction = fn (userdata: *anyopaque) callconv(.C) void;
     realloc: *const fn (ptr: ?*anyopaque, size: usize) callconv(.C) ?*anyopaque, // done
     formatString: *const fn (ret: ?*[*c]u8, fmt: [*c]const u8, ...) callconv(.C) c_int,
     logToConsole: *const fn (fmt: [*c]const u8, ...) callconv(.C) void, // done
@@ -304,7 +383,7 @@ pub const PlaydateSys = extern struct {
     getSecondsSinceEpoch: *const fn (milliseconds: ?*c_uint) callconv(.C) c_uint,
     drawFPS: *const fn (x: c_int, y: c_int) callconv(.C) void,
 
-    setUpdateCallback: *const fn (update: ?*const PDCallbackFunction, userdata: ?*anyopaque) callconv(.C) void,
+    setUpdateCallback: *const fn (update: *const CallbackFunction, userdata: ?*anyopaque) callconv(.C) void,
     getButtonState: *const fn (current: ?*Buttons, pushed: ?*Buttons, released: ?*Buttons) callconv(.C) void, // done
     setPeripheralsEnabled: *const fn (mask: PDPeripherals) callconv(.C) void,
     getAccelerometer: *const fn (outx: ?*f32, outy: ?*f32, outz: ?*f32) callconv(.C) void,
@@ -317,17 +396,32 @@ pub const PlaydateSys = extern struct {
     setAutoLockDisabled: *const fn (disable: c_int) callconv(.C) void,
 
     setMenuImage: *const fn (bitmap: *graphics.Bitmap, xOffset: c_int) callconv(.C) void,
-    addMenuItem: *const fn (title: [*:0]const u8, callback: *const PDMenuItemCallbackFunction, userdata: ?*anyopaque) callconv(.C) *AnyMenuItem,
-    addCheckmarkMenuItem: *const fn (title: [*:0]const u8, value: c_int, callback: *const PDMenuItemCallbackFunction, userdata: ?*anyopaque) callconv(.C) ?*AnyMenuItem,
-    addOptionsMenuItem: *const fn (title: [*:0]const u8, optionTitles: [*]const [*:0]const u8, optionsCount: c_int, f: *const PDMenuItemCallbackFunction, userdata: ?*anyopaque) callconv(.C) ?*AnyMenuItem,
+    addMenuItem: *const fn (
+        title: [*:0]const u8,
+        callback: ?*const MenuItemCallbackFunction,
+        userdata: ?*anyopaque,
+    ) callconv(.C) *AnyMenuItem,
+    addCheckmarkMenuItem: *const fn (
+        title: [*:0]const u8,
+        value: c_int,
+        callback: ?*const MenuItemCallbackFunction,
+        userdata: ?*anyopaque,
+    ) callconv(.C) *AnyCheckmarkMenuItem,
+    addOptionsMenuItem: *const fn (
+        title: [*:0]const u8,
+        optionTitles: [*]const [*:0]const u8,
+        optionsCount: c_int,
+        callback: ?*const MenuItemCallbackFunction,
+        userdata: ?*anyopaque,
+    ) callconv(.C) *AnyOptionsMenuItem,
     removeAllMenuItems: *const fn () callconv(.C) void,
     removeMenuItem: *const fn (menuItem: *AnyMenuItem) callconv(.C) void,
-    getMenuItemValue: *const fn (menuItem: *AnyMenuItem) callconv(.C) c_int,
+    getMenuItemValue: *const fn (menuItem: *const AnyMenuItem) callconv(.C) c_int,
     setMenuItemValue: *const fn (menuItem: *AnyMenuItem, value: c_int) callconv(.C) void,
-    getMenuItemTitle: *const fn (menuItem: *AnyMenuItem) callconv(.C) [*c]const u8,
+    getMenuItemTitle: *const fn (menuItem: *const AnyMenuItem) callconv(.C) [*:0]const u8,
     setMenuItemTitle: *const fn (menuItem: *AnyMenuItem, title: [*:0]const u8) callconv(.C) void,
-    getMenuItemUserdata: *const fn (menuItem: *AnyMenuItem) callconv(.C) ?*anyopaque,
-    setMenuItemUserdata: *const fn (menuItem: *AnyMenuItem, ud: ?*anyopaque) callconv(.C) void,
+    getMenuItemUserdata: *const fn (menuItem: *AnyMenuItem) callconv(.C) *anyopaque,
+    setMenuItemUserdata: *const fn (menuItem: *AnyMenuItem, ud: *anyopaque) callconv(.C) void,
 
     getReduceFlashing: *const fn () callconv(.C) c_int,
 

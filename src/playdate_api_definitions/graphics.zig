@@ -58,6 +58,27 @@ pub const Bitmap = opaque {
         }
     }
     // getBitmapData: *const fn (bitmap: ?*graphics.Bitmap, width: ?*c_int, height: ?*c_int, rowbytes: ?*c_int, mask: ?*[*c]u8, data: ?*[*c]u8) callconv(.C) void,
+    pub fn getData(self: *Bitmap) struct {
+        width: u16,
+        height: u16,
+        row_bytes: u16,
+        data: [*]u8,
+        mask: ?[*]u8,
+    } {
+        var width: u16 = undefined;
+        var height: u16 = undefined;
+        var row_bytes: u16 = undefined;
+        var mask: ?[*]u8 = undefined;
+        var data: [*]u8 = undefined;
+        gfx.getBitmapData(self, &width, &height, &row_bytes, &mask, &data);
+        return .{
+            .width = width,
+            .height = height,
+            .row_bytes = row_bytes,
+            .data = data,
+            .mask = mask,
+        };
+    }
     // clearBitmap: *const fn (bitmap: ?*graphics.Bitmap, bgcolor: graphics.LCDColor) callconv(.C) void,
     // rotatedBitmap: *const fn (bitmap: ?*graphics.Bitmap, rotation: f32, xscale: f32, yscale: f32, allocedSize: ?*c_int) callconv(.C) ?*graphics.Bitmap,
 };
@@ -126,7 +147,7 @@ pub const Playdategraphics = extern struct {
     // Drawing Functions
     clear: *const fn (color: LCDColor) callconv(.C) void,
     setBackgroundColor: *const fn (color: LCDSolidColor) callconv(.C) void,
-    setStencil: *const fn (stencil: ?*Bitmap) callconv(.C) void, // deprecated in favor of setStencilImage, which adds a "tile" flag
+    setStencil: *const fn (stencil: *Bitmap) callconv(.C) void, // deprecated in favor of setStencilImage, which adds a "tile" flag
     setDrawMode: *const fn (mode: BitmapDrawMode) callconv(.C) void,
     setDrawOffset: *const fn (dx: c_int, dy: c_int) callconv(.C) void,
     setClipRect: *const fn (x: c_int, y: c_int, width: c_int, height: c_int) callconv(.C) void,
@@ -154,7 +175,7 @@ pub const Playdategraphics = extern struct {
     loadBitmap: *const fn (path: [*:0]const u8, outerr: ?*[*:0]const u8) callconv(.C) ?*Bitmap,
     copyBitmap: *const fn (bitmap: ?*Bitmap) callconv(.C) ?*Bitmap,
     loadIntoBitmap: *const fn (path: [*:0]const u8, bitmap: *Bitmap, outerr: ?*[*:0]const u8) callconv(.C) void,
-    getBitmapData: *const fn (bitmap: *Bitmap, width: ?*c_int, height: ?*c_int, rowbytes: ?*c_int, mask: ?*[*c]u8, data: ?*[*c]u8) callconv(.C) void,
+    getBitmapData: *const fn (bitmap: *Bitmap, width: *c_int, height: *c_int, rowbytes: *c_int, mask: *?[*]u8, data: *[*]u8) callconv(.C) void,
     clearBitmap: *const fn (bitmap: ?*Bitmap, bgcolor: LCDColor) callconv(.C) void,
     rotatedBitmap: *const fn (bitmap: ?*Bitmap, rotation: f32, xscale: f32, yscale: f32, allocedSize: ?*c_int) callconv(.C) ?*Bitmap,
 

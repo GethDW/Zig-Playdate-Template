@@ -50,116 +50,110 @@ pub fn Sprite(comptime Userdata: type) type {
             return @ptrCast(@alignCast(spr.getUserdata(self.any())));
         }
 
-        pub fn any(self: *Self) *AnySprite {
-            return @ptrCast(self);
-        }
-
         pub fn new() error{OutOfMemory}!*Self {
-            const sprite = try AnySprite.new();
-            return sprite.to(Userdata);
+            return @ptrCast(try AnySprite.new());
         }
         pub fn destroy(self: *Self) void {
-            self.any().destroy();
+            AnySprite.destroy(@ptrCast(self));
         }
         pub fn copy(self: *Self) error{OutOfMemory}!*Self {
-            const sprite = try self.any().copy();
-            return sprite.to(Userdata);
+            return @ptrCast(try AnySprite.copy(@ptrCast(self)));
         }
 
         pub fn add(self: *Self) void {
-            self.any().add();
+            AnySprite.add(@ptrCast(self));
         }
         pub fn remove(self: *Self) void {
-            self.any().remove();
+            AnySprite.remove(@ptrCast(self));
         }
 
         pub fn setBounds(self: *Self, bounds: Rect) void {
-            self.any().setBounds(bounds);
+            AnySprite.setBounds(@ptrCast(self), bounds);
         }
         pub fn getBounds(self: *Self) Rect {
-            return self.any().getBounds();
+            return AnySprite.getBounds(@ptrCast(self));
         }
 
         pub fn moveTo(self: *Self, x: f32, y: f32) void {
-            self.any().moveTo(x, y);
+            AnySprite.moveTo(@ptrCast(self), x, y);
         }
         pub fn moveBy(self: *Self, dx: f32, dy: f32) void {
-            self.any().moveBy(dx, dy);
+            AnySprite.moveBy(@ptrCast(self), dx, dy);
         }
 
         pub fn setImage(self: *Self, image: *graphics.Bitmap, flip: graphics.BitmapFlip) void {
-            self.any().setImage(image, flip);
+            AnySprite.setImage(@ptrCast(self), image, flip);
         }
         pub fn getImage(self: *Self) ?*graphics.Bitmap {
-            return self.any().getImage();
+            return AnySprite.getImage(@ptrCast(self));
         }
 
         pub fn setSize(self: *Self, width: f32, height: f32) void {
-            self.any().setSize(width, height);
+            AnySprite.setSize(@ptrCast(self), width, height);
         }
         pub fn setZIndex(self: *Self, z_index: i16) void {
-            self.any().setZIndex(z_index);
+            AnySprite.setZIndex(@ptrCast(self), z_index);
         }
         pub fn getZIndex(self: *Self) i16 {
-            return self.any().getZIndex();
+            return AnySprite.getZIndex(@ptrCast(self));
         }
 
         pub fn setDrawMode(self: *Sprite, mode: graphics.BitmapDrawMode) void {
-            self.any().setDrawMode(mode);
+            AnySprite.setDrawMode(@ptrCast(self), mode);
         }
         pub fn setImageFlip(self: *Sprite, flip: graphics.BitmapFlip) void {
-            self.any().setImageFlip(flip);
+            AnySprite.setImageFlip(@ptrCast(self), flip);
         }
         pub fn getImageFlip(self: *Sprite) graphics.BitmapFlip {
-            return self.any().getImageFlip();
+            return AnySprite.getImageFlip(@ptrCast(self));
         }
         pub fn setClipRect(self: *Sprite, clip_rect: graphics.LCDRect) void {
-            self.any().setClipRect(self, clip_rect);
+            AnySprite.setClipRect(@ptrCast(self), self, clip_rect);
         }
         pub fn clearClipRect(self: *Sprite) void {
-            self.any().clearClipRect();
+            AnySprite.clearClipRect(@ptrCast(self));
         }
         pub fn setUpdatesEnabled(self: *Sprite, enabled: bool) void {
             self.any().setUpdatesEnabled(enabled);
         }
         pub fn updatesEnabled(self: *Sprite) bool {
-            return self.any().updatesEnabled();
+            return AnySprite.updatesEnabled(@ptrCast(self));
         }
         pub fn setCollisionsEnabled(self: *Self, enabled: bool) void {
-            self.any().setCollisionsEnabled(enabled);
+            AnySprite.setCollisionsEnabled(@ptrCast(self), enabled);
         }
         pub fn collisionsEnabled(self: *Self) bool {
-            return self.any().collisionsEnabled();
+            return AnySprite.collisionsEnabled(@ptrCast(self));
         }
         pub fn setVisible(self: *Self, enabled: bool) void {
-            self.any().setVisible(enabled);
+            AnySprite.setVisible(@ptrCast(self), enabled);
         }
         pub fn isVisible(self: *Self) c_int {
-            return self.any().isVisible();
+            return AnySprite.isVisible(@ptrCast(self));
         }
         pub fn setOpaque(self: *Self, enabled: bool) void {
-            self.any().setOpaque(enabled);
+            AnySprite.setOpaque(@ptrCast(self), enabled);
         }
         pub fn markDirty(self: *Self) void {
-            self.any().markDirty();
+            AnySprite.markDirty(@ptrCast(self));
         }
 
         pub fn setTag(self: *Self, tag: u8) void {
-            self.any().setTag(tag);
+            AnySprite.setTag(@ptrCast(self), tag);
         }
         pub fn getTag(self: *Self) u8 {
-            return self.any().getTag();
+            return AnySprite.getTag(@ptrCast(self));
         }
 
         pub fn setIgnoresDrawOffset(self: *Self, enabled: bool) void {
-            self.any().setIgnoresDrawOffset(enabled);
+            AnySprite.setIgnoresDrawOffset(@ptrCast(self), enabled);
         }
 
         pub fn setUpdateFunction(
             self: *Self,
             comptime update: fn (self: *Self) void,
         ) void {
-            self.any().setUpdateFunction(struct {
+            AnySprite.setUpdateFunction(@ptrCast(self), struct {
                 pub fn f(s: *AnySprite) void {
                     update(@ptrCast(s));
                 }
@@ -170,7 +164,7 @@ pub fn Sprite(comptime Userdata: type) type {
             self: *Self,
             comptime draw: fn (self: *Self, bounds: Rect, drawrect: Rect) void,
         ) void {
-            self.any().setDrawFunction(struct {
+            AnySprite.setDrawFunction(@ptrCast(self), struct {
                 pub fn f(s: *AnySprite, bounds: Rect, drawrect: Rect) void {
                     draw(@ptrCast(s), bounds, drawrect);
                 }
@@ -178,26 +172,26 @@ pub fn Sprite(comptime Userdata: type) type {
         }
 
         pub fn getPosition(self: *Self) struct { x: f32, y: f32 } {
-            return self.any().getPosition;
+            return AnySprite.getPosition(@ptrCast(self));
         }
 
         pub fn setCollideRect(self: *Self, collide_rect: Rect) void {
-            self.any().setCollideRect(collide_rect);
+            AnySprite.setCollideRect(@ptrCast(self), collide_rect);
         }
         pub fn getCollideRect(self: *Self) Rect {
-            return self.any().getCollideRect();
+            return AnySprite.getCollideRect(@ptrCast(self));
         }
         pub fn clearCollideRect(self: *Self) void {
-            self.any().clearCollideRect();
+            AnySprite.clearCollideRect(@ptrCast(self));
         }
 
         pub fn setCollisionResponseFunction(
             self: *Self,
             comptime func: fn (self: *Self, other: *AnySprite) CollisionResponse,
         ) void {
-            self.any().setCollisionResponseFunction(struct {
+            AnySprite.setCollisionResponseFunction(@ptrCast(self), struct {
                 pub fn f(s: *AnySprite, o: *AnySprite) CollisionResponse {
-                    return func(s.to(Userdata), o);
+                    return func(@ptrCast(s), o);
                 }
             }.f);
         }
@@ -209,16 +203,8 @@ pub fn Sprite(comptime Userdata: type) type {
             x: f32,
             /// the y position to move to
             y: f32,
-        ) struct {
-            /// the x position after collision
-            x: f32,
-            /// the y position after collision
-            y: f32,
-            /// info about any collisions that would occur
-            /// must be freed by the caller
-            collisions: []CollisionInfo,
-        } {
-            return self.any().checkCollisions(x, y);
+        ) CollisionResolution {
+            return AnySprite.checkCollisions(@ptrCast(self), x, y);
         }
 
         /// caller owns memory
@@ -228,32 +214,24 @@ pub fn Sprite(comptime Userdata: type) type {
             x: f32,
             /// the y position to move to
             y: f32,
-        ) struct {
-            /// the x position after collision
-            x: f32,
-            /// the y position after collision
-            y: f32,
-            /// info about any collisions that would occur
-            /// must be freed by the caller
-            collisions: []CollisionInfo,
-        } {
-            return self.any().moveWithCollisions(x, y);
+        ) CollisionResolution {
+            return AnySprite.moveWithCollisions(@ptrCast(self), x, y);
         }
 
         /// caller owns memory
         pub fn overlappingSprites(self: *Self) []*AnySprite {
-            return self.any().overlappingSprites();
+            return AnySprite.overlappingSprites(@ptrCast(self));
         }
 
         pub fn setStencilPattern(self: *Self, pattern: [8]u8) void {
-            self.any().setStencilPattern(pattern);
+            AnySprite.setStencilPattern(@ptrCast(self), pattern);
         }
         pub fn clearStencil(self: *Self) void {
-            self.any().clearStencil();
+            AnySprite.clearStencil(@ptrCast(self));
         }
 
         pub fn setStencilImage(self: *Self, stencil: *graphics.Bitmap, tile: bool) void {
-            self.any().setStencilImage(stencil, tile);
+            AnySprite.setStencilImage(@ptrCast(self), stencil, tile);
         }
     };
 }
@@ -262,10 +240,6 @@ pub fn Sprite(comptime Userdata: type) type {
 /// Useful for functions that are generic of any kind of sprite
 /// such as functions that do not access the sprites userdata.
 pub const AnySprite = opaque {
-    pub fn to(self: *AnySprite, comptime Userdata: type) *Sprite(Userdata) {
-        return @ptrCast(self);
-    }
-
     pub fn new() error{OutOfMemory}!*AnySprite {
         return spr.newSprite() orelse error.OutOfMemory;
     }
@@ -425,15 +399,7 @@ pub const AnySprite = opaque {
         x: f32,
         /// the y position to move to
         y: f32,
-    ) struct {
-        /// the x position after collision
-        x: f32,
-        /// the y position after collision
-        y: f32,
-        /// info about any collisions that would occur
-        /// must be freed by the caller
-        collisions: []CollisionInfo,
-    } {
+    ) CollisionResolution {
         var actualX, var actualY = [_]f32{undefined} ** 2;
         var len: c_int = undefined;
         const ptr = spr.checkCollisions(self, x, y, &actualX, &actualY, &len);
@@ -452,15 +418,7 @@ pub const AnySprite = opaque {
         x: f32,
         /// the y position to move to
         y: f32,
-    ) struct {
-        /// the x position after collision
-        x: f32,
-        /// the y position after collision
-        y: f32,
-        /// info about any collisions that would occur
-        /// must be freed by the caller
-        collisions: []CollisionInfo,
-    } {
+    ) CollisionResolution {
         var actualX, var actualY = [_]f32{undefined} ** 2;
         var len: c_int = undefined;
         const ptr = spr.moveWithCollisions(self, x, y, &actualX, &actualY, &len);
@@ -580,6 +538,20 @@ pub const CollisionInfo = extern struct {
     spriteRect: Rect,
     /// The rectangle the sprite being collided with occupied when the touch happened
     otherRect: Rect,
+};
+
+pub const CollisionResolution = struct {
+    /// the x position after collision
+    x: f32,
+    /// the y position after collision
+    y: f32,
+    /// info about any collisions that would occur
+    collisions: []CollisionInfo,
+
+    pub fn free(self: *CollisionResolution) void {
+        pdapi.system.allocator().free(self.collisions);
+        self.* = undefined;
+    }
 };
 
 ///// RAW BINDINGS /////
