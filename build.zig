@@ -4,6 +4,7 @@ const std = @import("std");
 /// ```zig
 /// const std = @import("std");
 /// const playdate_build = @import("playdate");
+///
 /// pub fn build(b: *std.Build) void {
 /// 	const playdate = b.dependency("playdate", .{});
 ///
@@ -144,11 +145,14 @@ pub const PlaydateExecutable = struct {
             .cpu_features = "cortex_m7-fp64-fp_armv8d16-fpregs64-vfp2-vfp3d16-vfp4d16",
         }) catch unreachable;
 
+        const sdk_path = if (options.sdk_path) |p|
+            b.dupe(p)
+        else
+            b.env_map.get("PLAYDATE_SDK_PATH") orelse @panic("missing sdk path");
         const self = b.allocator.create(PlaydateExecutable) catch @panic("OOM");
         self.* = .{
             .builder = b,
-            .sdk_path = if (options.sdk_path) |p| b.dupe(p) else self.builder.env_map.get("PLAYDATE_SDK_PATH") orelse
-                @panic("missing sdk path"),
+            .sdk_path = sdk_path,
             .name = options.name,
             .write = self.builder.addWriteFiles(),
             .host = self.builder.addSharedLibrary(.{
@@ -158,7 +162,7 @@ pub const PlaydateExecutable = struct {
                 .optimize = options.optimize,
             }),
             .pdex = self.builder.addExecutable(.{
-                .name = "pd",
+                .name = "pdex",
                 .root_source_file = entry,
                 .target = playdate_target,
                 .optimize = options.optimize,
@@ -173,12 +177,11 @@ pub const PlaydateExecutable = struct {
                 .{ .name = "playdate_raw", .module = raw_api },
             },
         };
-        self.pdex.addAnonymousModule("@main", module_options);
-        self.pdex.addModule("playdate_raw", raw_api);
-        self.pdex.addModule("playdate", api);
-        self.host.addAnonymousModule("@main", module_options);
-        self.host.addModule("playdate_raw", raw_api);
-        self.host.addModule("playdate", api);
+        inline for (.{ self.pdex, self.host }) |compile| {
+            compile.addAnonymousModule("@main", module_options);
+            compile.addModule("playdate_raw", raw_api);
+            compile.addModule("playdate", api);
+        }
 
         self.write.step.name = self.builder.fmt("write {s}", .{self.name});
         self.pdex.force_pic = true;
