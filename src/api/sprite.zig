@@ -2,6 +2,12 @@ const std = @import("std");
 const pdapi = @import("../api.zig");
 const graphics = pdapi.graphics;
 
+const raw = @import("playdate_raw");
+var spr: *const raw.PlaydateSprite = undefined;
+pub fn init(pdspr: *const raw.PlaydateSprite) void {
+    spr = pdspr;
+}
+
 pub fn setAlwaysRedraw(enable: bool) void {
     spr.setAlwaysRedraw(@intFromBool(enable));
 }
@@ -241,13 +247,13 @@ pub fn Sprite(comptime Userdata: type) type {
 /// such as functions that do not access the sprites userdata.
 pub const AnySprite = opaque {
     pub fn new() error{OutOfMemory}!*AnySprite {
-        return spr.newSprite() orelse error.OutOfMemory;
+        return if (spr.newSprite()) |ptr| @ptrCast(ptr) else error.OutOfMemory;
     }
     pub fn destroy(self: *AnySprite) void {
-        spr.freeSprite(self);
+        spr.freeSprite(@ptrCast(self));
     }
     pub fn copy(self: *AnySprite) error{OutOfMemory}!*AnySprite {
-        return spr.copy(self) orelse error.OutOfMemory;
+        return if (spr.copy(@ptrCast(self))) |ptr| @ptrCast(ptr) else error.OutOfMemory;
     }
     pub fn add(self: *AnySprite) void {
         spr.addSprite(self);
@@ -552,99 +558,4 @@ pub const CollisionResolution = struct {
         pdapi.system.allocator().free(self.collisions);
         self.* = undefined;
     }
-};
-
-///// RAW BINDINGS /////
-var spr: *const PlaydateSprite = undefined;
-pub fn init(pdspr: *const PlaydateSprite) void {
-    spr = pdspr;
-}
-
-pub const PlaydateSprite = extern struct {
-    const UpdateFunction = fn (sprite: *AnySprite) callconv(.C) void;
-    const DrawFunction = fn (sprite: *AnySprite, bounds: Rect, drawrect: Rect) callconv(.C) void;
-    const CollisionFilterProc = fn (sprite: *AnySprite, other: *AnySprite) callconv(.C) CollisionResponse;
-
-    setAlwaysRedraw: *const fn (flag: c_int) callconv(.C) void,
-    addDirtyRect: *const fn (dirtyRect: graphics.LCDRect) callconv(.C) void,
-    drawSprites: *const fn () callconv(.C) void,
-    updateAndDrawSprites: *const fn () callconv(.C) void,
-
-    newSprite: *const fn () callconv(.C) ?*AnySprite,
-    freeSprite: *const fn (sprite: *AnySprite) callconv(.C) void,
-    copy: *const fn (sprite: *AnySprite) callconv(.C) ?*AnySprite,
-
-    addSprite: *const fn (sprite: *AnySprite) callconv(.C) void,
-    removeSprite: *const fn (sprite: *AnySprite) callconv(.C) void,
-    removeSprites: *const fn (sprites: [*]*AnySprite, count: c_int) callconv(.C) void,
-    removeAllSprites: *const fn () callconv(.C) void,
-    getSpriteCount: *const fn () callconv(.C) c_int,
-
-    setBounds: *const fn (sprite: *AnySprite, bounds: Rect) callconv(.C) void,
-    getBounds: *const fn (sprite: *AnySprite) callconv(.C) Rect,
-    moveTo: *const fn (sprite: *AnySprite, x: f32, y: f32) callconv(.C) void,
-    moveBy: *const fn (sprite: *AnySprite, dx: f32, dy: f32) callconv(.C) void,
-
-    setImage: *const fn (sprite: *AnySprite, image: *graphics.Bitmap, flip: graphics.BitmapFlip) callconv(.C) void,
-    getImage: *const fn (sprite: *AnySprite) callconv(.C) ?*graphics.Bitmap,
-    setSize: *const fn (s: *AnySprite, width: f32, height: f32) callconv(.C) void,
-    setZIndex: *const fn (s: *AnySprite, z_index: i16) callconv(.C) void,
-    getZIndex: *const fn (sprite: *AnySprite) callconv(.C) i16,
-
-    setDrawMode: *const fn (sprite: *AnySprite, mode: graphics.BitmapDrawMode) callconv(.C) void,
-    setImageFlip: *const fn (sprite: *AnySprite, flip: graphics.BitmapFlip) callconv(.C) void,
-    getImageFlip: *const fn (sprite: *AnySprite) callconv(.C) graphics.BitmapFlip,
-    setStencil: *const fn (sprite: *AnySprite, mode: *graphics.Bitmap) callconv(.C) void, // deprecated in favor of setStencilImage()
-
-    setClipRect: *const fn (sprite: *AnySprite, clipRect: graphics.LCDRect) callconv(.C) void,
-    clearClipRect: *const fn (sprite: *AnySprite) callconv(.C) void,
-    setClipRectsInRange: *const fn (clipRect: graphics.LCDRect, startZ: c_int, endZ: c_int) callconv(.C) void,
-    clearClipRectsInRange: *const fn (startZ: c_int, endZ: c_int) callconv(.C) void,
-
-    setUpdatesEnabled: *const fn (sprite: *AnySprite, flag: c_int) callconv(.C) void,
-    updatesEnabled: *const fn (sprite: *AnySprite) callconv(.C) c_int,
-    setCollisionsEnabled: *const fn (sprite: *AnySprite, flag: c_int) callconv(.C) void,
-    collisionsEnabled: *const fn (sprite: *AnySprite) callconv(.C) c_int,
-    setVisible: *const fn (sprite: *AnySprite, flag: c_int) callconv(.C) void,
-    isVisible: *const fn (sprite: *AnySprite) callconv(.C) c_int,
-    setOpaque: *const fn (sprite: *AnySprite, flag: c_int) callconv(.C) void,
-    markDirty: *const fn (sprite: *AnySprite) callconv(.C) void,
-
-    setTag: *const fn (sprite: *AnySprite, tag: u8) callconv(.C) void,
-    getTag: *const fn (sprite: *AnySprite) callconv(.C) u8,
-
-    setIgnoresDrawOffset: *const fn (sprite: *AnySprite, flag: c_int) callconv(.C) void,
-
-    setUpdateFunction: *const fn (sprite: *AnySprite, func: *const UpdateFunction) callconv(.C) void,
-    setDrawFunction: *const fn (sprite: *AnySprite, func: *const DrawFunction) callconv(.C) void,
-
-    getPosition: *const fn (s: *AnySprite, x: *f32, y: *f32) callconv(.C) void,
-
-    // Collisions
-    resetCollisionWorld: *const fn () callconv(.C) void,
-
-    setCollideRect: *const fn (sprite: *AnySprite, collideRect: Rect) callconv(.C) void,
-    getCollideRect: *const fn (sprite: *AnySprite) callconv(.C) Rect,
-    clearCollideRect: *const fn (sprite: *AnySprite) callconv(.C) void,
-
-    // caller is responsible for freeing the returned array for all collision methods
-    setCollisionResponseFunction: *const fn (sprite: *AnySprite, func: *const CollisionFilterProc) callconv(.C) void,
-    checkCollisions: *const fn (sprite: *AnySprite, goalX: f32, goalY: f32, actualX: *f32, actualY: *f32, len: *c_int) callconv(.C) [*]CollisionInfo, // access results using const info = &results[i];
-    moveWithCollisions: *const fn (sprite: *AnySprite, goalX: f32, goalY: f32, actualX: *f32, actualY: *f32, len: *c_int) callconv(.C) [*]CollisionInfo,
-    querySpritesAtPoint: *const fn (x: f32, y: f32, len: *c_int) callconv(.C) [*]*AnySprite,
-    querySpritesInRect: *const fn (x: f32, y: f32, width: f32, height: f32, len: *c_int) callconv(.C) [*]*AnySprite,
-    querySpritesAlongLine: *const fn (x1: f32, y1: f32, x2: f32, y2: f32, len: *c_int) callconv(.C) [*]*AnySprite,
-    querySpriteInfoAlongLine: *const fn (x1: f32, y1: f32, x2: f32, y2: f32, len: *c_int) callconv(.C) [*]query.Info, // access results using const info = &results[i];
-    overlappingSprites: *const fn (sprite: *AnySprite, len: *c_int) callconv(.C) [*]*AnySprite,
-    allOverlappingSprites: *const fn (len: *c_int) callconv(.C) [*]*AnySprite,
-
-    // added in 1.7
-    setStencilPattern: *const fn (sprite: *AnySprite, pattern: [*]u8) callconv(.C) void, //pattern is 8 bytes
-    clearStencil: *const fn (sprite: *AnySprite) callconv(.C) void,
-
-    setUserdata: *const fn (sprite: *AnySprite, userdata: *anyopaque) callconv(.C) void,
-    getUserdata: *const fn (sprite: *AnySprite) callconv(.C) ?*anyopaque,
-
-    // added in 1.10
-    setStencilImage: *const fn (sprite: *AnySprite, stencil: *graphics.Bitmap, tile: c_int) callconv(.C) void,
 };

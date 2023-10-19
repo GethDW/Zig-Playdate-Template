@@ -2,8 +2,14 @@ const std = @import("std");
 const pdapi = @import("../api.zig");
 const system = pdapi.system;
 
+const raw = @import("playdate_raw");
+var fs: *const raw.PlaydateFile = undefined;
+pub fn init(pdfile: *const raw.PlaydateFile) void {
+    fs = pdfile;
+}
+
 pub const File = opaque {
-    pub const OpenOptions = packed struct(FileOptions) {
+    pub const OpenOptions = packed struct(raw.FileOptions) {
         read: bool = false,
         read_data: bool = false,
         write: bool = false,
@@ -100,9 +106,9 @@ pub const File = opaque {
     // seek: *const fn (file: *File, pos: c_int, whence: c_int) callconv(.C) c_int,
     pub fn seek(self: *File, pos: i32, whence: enum { set, current, end }) error{SeekFail}!void {
         if (fs.seek(self, pos, switch (whence) {
-            .set => SEEK_SET,
-            .current => SEEK_CUR,
-            .end => SEEK_END,
+            .set => raw.SEEK_SET,
+            .current => raw.SEEK_CUR,
+            .end => raw.SEEK_END,
         }) != 0) {
             system.err("error: %s", fs.geterr());
             return error.SeekFail;
@@ -157,7 +163,7 @@ pub const Stat = struct {
     second: u16,
 };
 pub fn stat(path: [*:0]const u8) error{StatFail}!Stat {
-    var s: FileStat = undefined;
+    var s: raw.FileStat = undefined;
     if (fs.stat(path, &s) != 0) {
         system.err("error: %s", fs.geterr());
         return error.StatFail;
@@ -191,59 +197,9 @@ pub fn unlink(path: [*:0]const u8, recursive: bool) error{UnlinkFail}!void {
 }
 
 // rename: *const fn (from: [*:0]const u8, to: [*c]const u8) callconv(.C) c_int,
-pub fn rename(from: [*:0]const u8, to: [*c]const u8) error{RenameFail}!void {
+pub fn rename(from: [*:0]const u8, to: [*:0]const u8) error{RenameFail}!void {
     if (fs.rename(from, to) != 0) {
         system.err("error: %s", fs.geterr());
         return error.RenameFail;
     }
 }
-
-///// RAW BINDINGS /////
-var fs: *const PlaydateFile = undefined;
-pub fn init(pdfile: *const PlaydateFile) void {
-    fs = pdfile;
-}
-
-const FileOptions = c_int;
-const FILE_READ = (1 << 0);
-const FILE_READ_DATA = (1 << 1);
-const FILE_WRITE = (1 << 2);
-const FILE_APPEND = (2 << 2);
-
-const SEEK_SET = 0;
-const SEEK_CUR = 1;
-const SEEK_END = 2;
-
-const FileStat = extern struct {
-    isdir: c_int,
-    size: c_uint,
-    m_year: c_int,
-    m_month: c_int,
-    m_day: c_int,
-    m_hour: c_int,
-    m_minute: c_int,
-    m_second: c_int,
-};
-
-pub const PlaydateFile = extern struct {
-    geterr: *const fn () callconv(.C) [*:0]const u8,
-
-    listfiles: *const fn (
-        path: [*:0]const u8,
-        callback: *const fn (path: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void,
-        userdata: ?*anyopaque,
-        showhidden: c_int,
-    ) callconv(.C) c_int,
-    stat: *const fn (path: [*:0]const u8, stat: *FileStat) callconv(.C) c_int,
-    mkdir: *const fn (path: [*:0]const u8) callconv(.C) c_int,
-    unlink: *const fn (path: [*:0]const u8, recursive: c_int) callconv(.C) c_int,
-    rename: *const fn (from: [*:0]const u8, to: [*:0]const u8) callconv(.C) c_int,
-
-    open: *const fn (path: [*:0]const u8, options: FileOptions) callconv(.C) ?*File,
-    close: *const fn (file: *File) callconv(.C) c_int,
-    read: *const fn (file: *File, buf: *anyopaque, len: c_uint) callconv(.C) c_int,
-    write: *const fn (file: *File, buf: *const anyopaque, len: c_uint) callconv(.C) c_int,
-    flush: *const fn (file: *File) callconv(.C) c_int,
-    tell: *const fn (file: *File) callconv(.C) c_int,
-    seek: *const fn (file: *File, pos: c_int, whence: c_int) callconv(.C) c_int,
-};

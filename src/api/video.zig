@@ -2,8 +2,9 @@ const pdapi = @import("../api.zig");
 const system = pdapi.system;
 const graphics = pdapi.graphics;
 
-var vid: *const PlaydateVideo = undefined;
-pub fn init(pdvid: *const PlaydateVideo) void {
+const raw = @import("playdate_raw");
+var vid: *const raw.PlaydateVideo = undefined;
+pub fn init(pdvid: *const raw.PlaydateVideo) void {
     vid = pdvid;
 }
 
@@ -56,15 +57,4 @@ pub const VideoPlayer = opaque {
     pub fn getContext(self: *VideoPlayer) error{ContextFail}!*graphics.Bitmap {
         return vid.getContext(self) orelse error.ContextFail;
     }
-};
-
-pub const PlaydateVideo = extern struct {
-    loadVideo: *const fn ([*:0]const u8) callconv(.C) ?*VideoPlayer,
-    freePlayer: *const fn (*VideoPlayer) callconv(.C) void,
-    setContext: *const fn (*VideoPlayer, *graphics.Bitmap) callconv(.C) c_int,
-    useScreenContext: *const fn (*VideoPlayer) callconv(.C) void,
-    renderFrame: *const fn (*VideoPlayer, c_int) callconv(.C) c_int,
-    getError: *const fn (*VideoPlayer) callconv(.C) [*:0]const u8,
-    getInfo: *const fn (*VideoPlayer, width: ?*c_int, height: ?*c_int, framerate: ?*f32, frame_count: ?*c_int, current_frame: ?*c_int) callconv(.C) void,
-    getContext: *const fn (*VideoPlayer) callconv(.C) ?*graphics.Bitmap,
 };

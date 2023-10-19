@@ -1,13 +1,31 @@
 const std = @import("std");
 
-pub fn buildPDX(b: *Build, options: PlaydateExecutable.Options) *PlaydateExecutable {
-    return PlaydateExecutable.create(b, options);
+pub fn buildPDX(
+    b: *Build,
+    playdate_zig: *Build.Dependency,
+    options: PlaydateExecutable.Options,
+) *PlaydateExecutable {
+    return PlaydateExecutable.create(
+        b,
+        playdate_zig.module("playdate_raw"),
+        playdate_zig.module("playdate"),
+        playdate_zig.path("link_map.ld"),
+        options,
+    );
 }
 
 pub fn build(b: *Build) !void {
     const optimize = b.standardOptimizeOption(.{});
 
-    const pdx = buildPDX(b, .{
+    const raw_api = b.addModule("playdate_raw", .{
+        .source_file = .{ .path = "src/api/raw.zig" },
+    });
+    const api = b.addModule("playdate", .{
+        .source_file = .{ .path = "src/api.zig" },
+        .dependencies = &.{.{ .name = "playdate_raw", .module = raw_api }},
+    });
+
+    const pdx = PlaydateExecutable.create(b, raw_api, api, LazyPath.relative("link_map.ld"), .{
         .name = "example",
         .root_source_file = .{ .path = "src/entry.zig" },
         .optimize = optimize,
@@ -47,13 +65,22 @@ pub fn build(b: *Build) !void {
 const Build = std.Build;
 const LazyPath = Build.LazyPath;
 const Step = Build.Step;
+const Compile = Step.Compile;
 pub const PlaydateExecutable = struct {
     builder: *Build,
+    /// Path to PlaydateSDK
     sdk_path: []const u8,
+    /// The name of the resulting pdx
     name: []const u8,
+    /// The resulting pdx
     pdx: LazyPath,
+    /// The pdc command used to make the pdx
+    pdc: *Step.Run,
+    /// The dynamic library used by PlaydateSimulator
     host: *Step.Compile,
-    pd_exe: *Step.Compile,
+    /// The binary used on the Playdate hardware
+    pdex: *Step.Compile,
+    /// The Source directory used in the pdc command
     write: *Step.WriteFile,
 
     const os_tag = @import("builtin").os.tag;
@@ -70,8 +97,13 @@ pub const PlaydateExecutable = struct {
         pdxinfo: LazyPath,
         sdk_path: ?[]const u8 = null,
     };
-    pub fn create(b: *Build, options: Options) *PlaydateExecutable {
-        const link_map = comptime std.fs.path.dirname(@src().file).? ++ "/link_map.ld";
+    pub fn create(
+        b: *Build,
+        raw_api: *Build.Module,
+        api: *Build.Module,
+        link_map: LazyPath,
+        options: Options,
+    ) *PlaydateExecutable {
         const playdate_target = std.zig.CrossTarget.parse(.{
             .arch_os_abi = "thumb-freestanding-eabihf",
             .cpu_features = "cortex_m7-fp64-fp_armv8d16-fpregs64-vfp2-vfp3d16-vfp4d16",
@@ -90,45 +122,43 @@ pub const PlaydateExecutable = struct {
                 .target = .{},
                 .optimize = options.optimize,
             }),
-            .pd_exe = self.builder.addExecutable(.{
+            .pdex = self.builder.addExecutable(.{
                 .name = "pd",
                 .root_source_file = options.root_source_file,
                 .target = playdate_target,
                 .optimize = options.optimize,
             }),
             .pdx = undefined,
+            .pdc = undefined,
         };
+        self.pdex.addModule("playdate_raw", raw_api);
+        self.host.addModule("playdate_raw", raw_api);
+        self.pdex.addModule("playdate", api);
+        self.host.addModule("playdate", api);
 
         self.write.step.name = self.builder.fmt("write {s}", .{self.name});
-        self.pd_exe.force_pic = true;
-        self.pd_exe.link_emit_relocs = true;
-        self.pd_exe.setLinkerScriptPath(.{ .path = link_map });
+        self.pdex.force_pic = true;
+        self.pdex.link_emit_relocs = true;
+        self.pdex.setLinkerScriptPath(link_map);
         if (options.optimize == .ReleaseFast) {
-            self.pd_exe.omit_frame_pointer = true;
+            self.pdex.omit_frame_pointer = true;
         }
 
         _ = self.write.addCopyFile(self.host.getOutputSource(), "pdex" ++ lib_ext);
-        _ = self.write.addCopyFile(self.pd_exe.getOutputSource(), "pdex.elf");
+        _ = self.write.addCopyFile(self.pdex.getOutputSource(), "pdex.elf");
         _ = self.write.addCopyFile(options.pdxinfo, "pdxinfo");
 
         const compiler_path = self.builder.pathJoin(&.{ self.sdk_path, "bin", if (os_tag == .windows) "pdc.exe" else "pdc" });
-        const pdc = self.builder.addSystemCommand(&.{ compiler_path, "--skip-unknown" });
-        pdc.step.dependOn(CheckSDKVersion.create(b, self.sdk_path));
-        pdc.setName(self.builder.fmt("pdc {s}", .{self.name}));
-        pdc.addDirectorySourceArg(self.write.getDirectory());
-        self.pdx = pdc.addOutputFileArg(self.builder.fmt("{s}.pdx", .{options.name}));
+        self.pdc = self.builder.addSystemCommand(&.{compiler_path});
+        self.pdc.step.dependOn(CheckSDKVersion.create(b, self.sdk_path));
+        self.pdc.setName(self.builder.fmt("pdc {s}", .{self.name}));
+        self.pdc.addDirectorySourceArg(self.write.getDirectory());
+        self.pdx = self.pdc.addOutputFileArg(self.builder.fmt("{s}.pdx", .{options.name}));
 
         return self;
     }
 
-    pub fn addAnonymousModule(self: *PlaydateExecutable, name: []const u8, options: Build.CreateModuleOptions) void {
-        self.host.addAnonymousModule(name, options);
-        self.pd_exe.addAnonymousModule(name, options);
-    }
-    pub fn addModule(self: *PlaydateExecutable, name: []const u8, module: *Build.Module) void {
-        self.host.addModule(name, module);
-        self.pd_exe.addModule(name, module);
-    }
+    /// Run the pdx in PlaydateSimulator.
     pub fn addRun(self: *PlaydateExecutable) *Step.Run {
         const simulator_path = switch (os_tag) {
             .linux => self.builder.pathJoin(&.{ self.sdk_path, "bin", "PlaydateSimulator" }),
@@ -141,6 +171,8 @@ pub const PlaydateExecutable = struct {
         run_cmd.addDirectorySourceArg(self.pdx);
         return run_cmd;
     }
+
+    /// Installs the pdx to the prefix directory.
     pub fn addInstall(self: *PlaydateExecutable) *Step.InstallDir {
         return self.builder.addInstallDirectory(.{
             .source_dir = self.pdx,
@@ -148,11 +180,12 @@ pub const PlaydateExecutable = struct {
             .install_subdir = self.builder.fmt("{s}.pdx", .{self.name}),
         });
     }
+
     pub fn getOutput(self: *PlaydateExecutable) LazyPath {
         return self.pdx;
     }
 
-    /// Adds a file to the directory used by `pdc`.
+    /// Adds a file to the directory used by pdc.
     pub fn addFile(self: *PlaydateExecutable, source: LazyPath, sub_path: []const u8) void {
         _ = self.write.addCopyFile(source, sub_path);
     }

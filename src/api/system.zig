@@ -6,6 +6,19 @@ const assert = std.debug.assert;
 const mem = std.mem;
 const Allocator = mem.Allocator;
 
+const raw = @import("playdate_raw");
+pub var sys: *const raw.PlaydateSys = undefined;
+// TODO: pub fn print(comptime fmt: []const u8, args: anytype) void
+//       creates a c-style fmt string at comptime and with type checking
+//       then calls log with @call.
+pub var log: *const fn (fmt: [*:0]const u8, ...) callconv(.C) void = undefined;
+pub var err: *const fn (fmt: [*:0]const u8, ...) callconv(.C) void = undefined;
+pub fn init(pdsys: *const raw.PlaydateSys) void {
+    sys = pdsys;
+    log = pdsys.logToConsole;
+    err = pdsys.@"error";
+}
+
 pub fn allocator() Allocator {
     return Allocator{
         .ptr = @ptrCast(@constCast(sys.realloc)),
@@ -136,7 +149,7 @@ pub const AnyMenuItem = opaque {
         sys.removeMenuItem(self);
     }
 
-    fn inner(comptime callback: fn () void) PlaydateSys.PDMenuItemCallbackFunction {
+    fn inner(comptime callback: fn () void) raw.PlaydateSys.PDMenuItemCallbackFunction {
         return struct {
             pub fn f(_: ?*anyopaque) callconv(.C) void {
                 callback();
@@ -170,10 +183,10 @@ pub fn MenuItem(comptime Userdata: type) type {
             sys.setMenuItemUserdata(self.any(), userdata);
         }
 
-        fn inner(comptime callback: fn (*Userdata) void) PlaydateSys.MenuItemCallbackFunction {
+        fn inner(comptime callback: fn (*Userdata) void) raw.PDMenuItemCallbackFunction {
             return struct {
-                pub fn f(ptr: *anyopaque) callconv(.C) void {
-                    callback(@ptrCast(@alignCast(ptr)));
+                pub fn f(ptr: ?*anyopaque) callconv(.C) void {
+                    callback(@ptrCast(@alignCast(ptr.?)));
                 }
             }.f;
         }
@@ -262,7 +275,7 @@ pub fn CheckmarkMenuItem(comptime Userdata: type) type {
 
 pub const AnyOptionsMenuItem = opaque {
     pub fn new(title: [*:0]const u8, options: []const [*:0]const u8) *AnyOptionsMenuItem {
-        return sys.addOptionsMenuItem(title, options.ptr, @intCast(options.len), null, null);
+        return @ptrCast(sys.addOptionsMenuItem(title, options.ptr, @intCast(options.len), null, null));
     }
     pub fn newWithCallback(title: [*:0]const u8, options: []const [*:0]const u8, comptime callback: fn () void) *AnyOptionsMenuItem {
         return sys.addOptionsMenuItem(title, options.ptr, @intCast(options.len), &AnyMenuItem.inner(callback), null);
@@ -317,128 +330,3 @@ pub fn OptionsMenuItem(comptime Userdata: type) type {
         }
     };
 }
-
-pub const Event = enum(c_int) {
-    Init,
-    InitLua,
-    Lock,
-    Unlock,
-    Pause,
-    Resume,
-    Terminate,
-    KeyPressed, // arg is keycode
-    KeyReleased,
-    LowPower,
-};
-const Language = enum(c_int) {
-    English,
-    Japanese,
-    Unknown,
-};
-
-const PDPeripherals = c_int;
-const PERIPHERAL_NONE = 0;
-const PERIPHERAL_ACCELEROMETER = (1 << 0);
-// ...
-const PERIPHERAL_ALL = 0xFFFF;
-
-pub const StringEncoding = enum(c_int) {
-    ASCII,
-    UTF8,
-    @"16BitLE",
-};
-
-pub const DateTime = extern struct {
-    year: u16,
-    month: u8, // 1-12
-    day: u8, // 1-31
-    weekday: u8, // 1=monday-7=sunday
-    hour: u8, // 0-23
-    minute: u8,
-    second: u8,
-};
-
-///// RAW BINDINGS /////
-pub var sys: *const PlaydateSys = undefined;
-// TODO: pub fn print(comptime fmt: []const u8, args: anytype) void
-//       creates a c-style fmt string at comptime and with type checking
-//       then calls log with @call.
-pub var log: *const fn (fmt: [*:0]const u8, ...) callconv(.C) void = undefined;
-pub var err: *const fn (fmt: [*c]const u8, ...) callconv(.C) void = undefined;
-pub fn init(pdsys: *const PlaydateSys) void {
-    sys = pdsys;
-    log = pdsys.logToConsole;
-    err = pdsys.@"error";
-}
-
-pub const PlaydateSys = extern struct {
-    const CallbackFunction = fn (userdata: ?*anyopaque) callconv(.C) c_int;
-    const MenuItemCallbackFunction = fn (userdata: *anyopaque) callconv(.C) void;
-    realloc: *const fn (ptr: ?*anyopaque, size: usize) callconv(.C) ?*anyopaque, // done
-    formatString: *const fn (ret: ?*[*c]u8, fmt: [*c]const u8, ...) callconv(.C) c_int,
-    logToConsole: *const fn (fmt: [*c]const u8, ...) callconv(.C) void, // done
-    @"error": *const fn (fmt: [*c]const u8, ...) callconv(.C) void, // done
-    getLanguage: *const fn () callconv(.C) Language,
-    getCurrentTimeMilliseconds: *const fn () callconv(.C) c_uint,
-    getSecondsSinceEpoch: *const fn (milliseconds: ?*c_uint) callconv(.C) c_uint,
-    drawFPS: *const fn (x: c_int, y: c_int) callconv(.C) void,
-
-    setUpdateCallback: *const fn (update: *const CallbackFunction, userdata: ?*anyopaque) callconv(.C) void,
-    getButtonState: *const fn (current: ?*Buttons, pushed: ?*Buttons, released: ?*Buttons) callconv(.C) void, // done
-    setPeripheralsEnabled: *const fn (mask: PDPeripherals) callconv(.C) void,
-    getAccelerometer: *const fn (outx: ?*f32, outy: ?*f32, outz: ?*f32) callconv(.C) void,
-    getCrankChange: *const fn () callconv(.C) f32,
-    getCrankAngle: *const fn () callconv(.C) f32,
-    isCrankDocked: *const fn () callconv(.C) c_int,
-    setCrankSoundsDisabled: *const fn (flag: c_int) callconv(.C) c_int, // returns previous setting
-
-    getFlipped: *const fn () callconv(.C) c_int,
-    setAutoLockDisabled: *const fn (disable: c_int) callconv(.C) void,
-
-    setMenuImage: *const fn (bitmap: *graphics.Bitmap, xOffset: c_int) callconv(.C) void,
-    addMenuItem: *const fn (
-        title: [*:0]const u8,
-        callback: ?*const MenuItemCallbackFunction,
-        userdata: ?*anyopaque,
-    ) callconv(.C) *AnyMenuItem,
-    addCheckmarkMenuItem: *const fn (
-        title: [*:0]const u8,
-        value: c_int,
-        callback: ?*const MenuItemCallbackFunction,
-        userdata: ?*anyopaque,
-    ) callconv(.C) *AnyCheckmarkMenuItem,
-    addOptionsMenuItem: *const fn (
-        title: [*:0]const u8,
-        optionTitles: [*]const [*:0]const u8,
-        optionsCount: c_int,
-        callback: ?*const MenuItemCallbackFunction,
-        userdata: ?*anyopaque,
-    ) callconv(.C) *AnyOptionsMenuItem,
-    removeAllMenuItems: *const fn () callconv(.C) void,
-    removeMenuItem: *const fn (menuItem: *AnyMenuItem) callconv(.C) void,
-    getMenuItemValue: *const fn (menuItem: *const AnyMenuItem) callconv(.C) c_int,
-    setMenuItemValue: *const fn (menuItem: *AnyMenuItem, value: c_int) callconv(.C) void,
-    getMenuItemTitle: *const fn (menuItem: *const AnyMenuItem) callconv(.C) [*:0]const u8,
-    setMenuItemTitle: *const fn (menuItem: *AnyMenuItem, title: [*:0]const u8) callconv(.C) void,
-    getMenuItemUserdata: *const fn (menuItem: *AnyMenuItem) callconv(.C) *anyopaque,
-    setMenuItemUserdata: *const fn (menuItem: *AnyMenuItem, ud: *anyopaque) callconv(.C) void,
-
-    getReduceFlashing: *const fn () callconv(.C) c_int,
-
-    // 1.1
-    getElapsedTime: *const fn () callconv(.C) f32,
-    resetElapsedTime: *const fn () callconv(.C) void,
-
-    // 1.4
-    getBatteryPercentage: *const fn () callconv(.C) f32,
-    getBatteryVoltage: *const fn () callconv(.C) f32,
-
-    // 1.13
-    getTimezoneOffset: *const fn () callconv(.C) i32,
-    shouldDisplay24HourTime: *const fn () callconv(.C) c_int,
-    convertEpochToDateTime: *const fn (epoch: u32, datetime: *DateTime) callconv(.C) void,
-    convertDateTimeToEpoch: *const fn (datetime: *DateTime) callconv(.C) u32,
-
-    //2.0
-    clearICache: *const fn () callconv(.C) void,
-};

@@ -1,14 +1,15 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const is_simulated = @import("config").is_simulated;
-const pdapi = @import("api.zig");
+const api = @import("playdate");
+const raw = @import("playdate_raw");
 const main = @import("main.zig");
 
 fn call(comptime name: []const u8) void {
     if (@hasDecl(main, name)) {
         const f = @field(main, name);
         f() catch |e| {
-            pdapi.system.err("error: in " ++ name ++ " (%s)", @errorName(e).ptr);
+            api.system.err("error: in " ++ name ++ " (%s)", @errorName(e).ptr);
             switch (builtin.mode) {
                 .Debug, .ReleaseSafe => @panic(name ++ " failed"),
                 else => {},
@@ -16,24 +17,24 @@ fn call(comptime name: []const u8) void {
         };
     }
 }
-pub export fn eventHandler(playdate: *pdapi.PlaydateAPI, event: pdapi.system.Event, _: u32) callconv(.C) c_int {
+pub export fn eventHandler(playdate: *raw.PlaydateAPI, event: raw.PDSystemEvent, _: u32) callconv(.C) c_int {
     switch (event) {
-        .Init => {
-            pdapi.init(playdate);
+        .EventInit => {
+            api.init(playdate);
             call("init");
             if (@hasDecl(main, "update")) {
                 playdate.system.setUpdateCallback(update, null);
             }
         },
-        .InitLua => call("initLua"),
-        .Lock => call("lock"),
-        .Unlock => call("unluck"),
-        .Pause => call("pause"),
-        .Resume => call("resume"),
-        .Terminate => call("terminate"),
+        .EventInitLua => call("initLua"),
+        .EventLock => call("lock"),
+        .EventUnlock => call("unluck"),
+        .EventPause => call("pause"),
+        .EventResume => call("resume"),
+        .EventTerminate => call("terminate"),
         // TODO
-        .KeyPressed, .KeyReleased => {},
-        .LowPower => call("lowPower"),
+        .EventKeyPressed, .EventKeyReleased => {},
+        .EventLowPower => call("lowPower"),
     }
     return 0;
 }

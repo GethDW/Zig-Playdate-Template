@@ -1,5 +1,5 @@
 const std = @import("std");
-const pd = @import("api.zig");
+const pd = @import("playdate");
 const Sprite = pd.sprite.Sprite;
 const AnySprite = pd.sprite.AnySprite;
 
