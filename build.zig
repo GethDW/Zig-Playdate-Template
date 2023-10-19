@@ -1,7 +1,33 @@
 const std = @import("std");
 
+/// example usage:
+/// ```zig
+/// const std = @import("std");
+/// const playdate_build = @import("playdate");
+/// pub fn build(b: *std.Build) void {
+/// 	const playdate = b.dependency("playdate", .{});
+///
+/// 	const optimize = b.standardOptimizeOption(.{});
+///
+/// 	const pdx = playdate_build.buildPDX(b, playdate, .{
+/// 		.name = "example",
+/// 		.root_source_file = .{ .path = "src/main.zig" },
+/// 		.optimize = optimize,
+/// 		.pdxinfo = .{ .path = "src/pdxinfo" },
+/// 	});
+/// 	pdx.addFile(.{ .path = "assets/icon.png" });
+///
+///		pdx.install(b);
+///
+/// 	const run_step = b.step("run", "Run the app");
+/// 	run_step.dependOn(&pdx.addRun().step);
+/// 	run_step.dependOn(b.getInstallStep());
+/// }
+/// ```
 pub fn buildPDX(
     b: *Build,
+    /// This should be the same as the dependency that
+    /// this funcion was imported from.
     playdate_zig: *Build.Dependency,
     options: PlaydateExecutable.Options,
 ) *PlaydateExecutable {
@@ -10,6 +36,7 @@ pub fn buildPDX(
         playdate_zig.module("playdate_raw"),
         playdate_zig.module("playdate"),
         playdate_zig.path("link_map.ld"),
+        playdate_zig.path("src/entry.zig"),
         options,
     );
 }
@@ -25,12 +52,19 @@ pub fn build(b: *Build) !void {
         .dependencies = &.{.{ .name = "playdate_raw", .module = raw_api }},
     });
 
-    const pdx = PlaydateExecutable.create(b, raw_api, api, LazyPath.relative("link_map.ld"), .{
-        .name = "example",
-        .root_source_file = .{ .path = "src/entry.zig" },
-        .optimize = optimize,
-        .pdxinfo = .{ .path = "assets/pdxinfo" },
-    });
+    const pdx = PlaydateExecutable.create(
+        b,
+        raw_api,
+        api,
+        LazyPath.relative("link_map.ld"),
+        .{ .path = "src/entry.zig" },
+        .{
+            .name = "example",
+            .root_source_file = .{ .path = "src/main.zig" },
+            .optimize = optimize,
+            .pdxinfo = .{ .path = "src/pdxinfo" },
+        },
+    );
 
     {
         var src = try b.build_root.handle.openIterableDir("src", .{});
@@ -55,7 +89,7 @@ pub fn build(b: *Build) !void {
         }
     }
 
-    b.getInstallStep().dependOn(&pdx.addInstall().step);
+    pdx.install(b);
 
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&pdx.addRun().step);
@@ -102,6 +136,7 @@ pub const PlaydateExecutable = struct {
         raw_api: *Build.Module,
         api: *Build.Module,
         link_map: LazyPath,
+        entry: LazyPath,
         options: Options,
     ) *PlaydateExecutable {
         const playdate_target = std.zig.CrossTarget.parse(.{
@@ -118,22 +153,31 @@ pub const PlaydateExecutable = struct {
             .write = self.builder.addWriteFiles(),
             .host = self.builder.addSharedLibrary(.{
                 .name = "host",
-                .root_source_file = options.root_source_file,
+                .root_source_file = entry,
                 .target = .{},
                 .optimize = options.optimize,
             }),
             .pdex = self.builder.addExecutable(.{
                 .name = "pd",
-                .root_source_file = options.root_source_file,
+                .root_source_file = entry,
                 .target = playdate_target,
                 .optimize = options.optimize,
             }),
             .pdx = undefined,
             .pdc = undefined,
         };
+        const module_options = .{
+            .source_file = options.root_source_file,
+            .dependencies = &.{
+                .{ .name = "playdate", .module = api },
+                .{ .name = "playdate_raw", .module = raw_api },
+            },
+        };
+        self.pdex.addAnonymousModule("@main", module_options);
         self.pdex.addModule("playdate_raw", raw_api);
-        self.host.addModule("playdate_raw", raw_api);
         self.pdex.addModule("playdate", api);
+        self.host.addAnonymousModule("@main", module_options);
+        self.host.addModule("playdate_raw", raw_api);
         self.host.addModule("playdate", api);
 
         self.write.step.name = self.builder.fmt("write {s}", .{self.name});
@@ -179,6 +223,10 @@ pub const PlaydateExecutable = struct {
             .install_dir = .prefix,
             .install_subdir = self.builder.fmt("{s}.pdx", .{self.name}),
         });
+    }
+
+    pub fn install(self: *PlaydateExecutable, b: *Build) void {
+        b.getInstallStep().dependOn(&self.addInstall().step);
     }
 
     pub fn getOutput(self: *PlaydateExecutable) LazyPath {

@@ -3,7 +3,7 @@ const builtin = @import("builtin");
 const is_simulated = @import("config").is_simulated;
 const api = @import("playdate");
 const raw = @import("playdate_raw");
-const main = @import("main.zig");
+const main = @import("@main");
 
 fn call(comptime name: []const u8) void {
     if (@hasDecl(main, name)) {
