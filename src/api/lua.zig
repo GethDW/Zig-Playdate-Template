@@ -1,29 +1,26 @@
 const pdapi = @import("../api.zig");
+const plt = @import("plt.zig");
 const graphics = pdapi.graphics;
 const sprite = pdapi.sprite;
 
 const raw = @import("playdate_raw");
-pub var lua: *const raw.PlaydateLua = undefined;
-pub fn init(pdlua: *const raw.PlaydateLua) void {
-    lua = pdlua;
-}
 
 pub fn get(comptime T: type, pos: i32) T {
     return switch (@typeInfo(T)) {
-        .Optional => |info| if (lua.argIsNil(pos) == 1) null else getNative(info.child, pos),
+        .Optional => |info| if (plt.pd.lua_argIsNil(pos) == 1) null else getNative(info.child, pos),
         else => get(T, pos),
     };
 }
 
 fn getNative(comptime T: type, pos: i32) T {
     switch (@typeInfo(T)) {
-        .Bool => |_| return lua.getArgBool(pos) == 1,
-        .Float => |_| return lua.getArgFloat(pos),
-        .Int => |_| return @intCast(lua.getArgInt(pos)),
+        .Bool => |_| return plt.pd.lua_getArgBool(pos) == 1,
+        .Float => |_| return plt.pd.lua_getArgFloat(pos),
+        .Int => |_| return @intCast(plt.pd.lua_getArgInt(pos)),
         else => switch (T) {
-            sprite.Sprite => return lua.getSprite(pos).?,
-            graphics.Bitmap => return lua.getBitmap(pos).?,
-            [*:0]const u8 => return lua.getArgString(pos),
+            sprite.Sprite => return plt.pd.lua_getSprite(pos).?,
+            graphics.Bitmap => return plt.pd.lua_getBitmap(pos).?,
+            [*:0]const u8 => return plt.pd.lua_getArgString(pos),
             else => @compileError("unsupported type in lua " ++ @typeName(T)),
         },
     }
@@ -54,7 +51,7 @@ pub fn registerClass(
     }
 
     var err: [*:0]const u8 = undefined;
-    if (lua.registerClass(
+    if (plt.pd.lua_registerClass(
         @ptrCast(name ++ &[_]u8{0}),
         &regs,
         null,

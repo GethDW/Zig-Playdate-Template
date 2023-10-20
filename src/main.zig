@@ -17,6 +17,7 @@ var c: *pd.system.AnyCheckmarkMenuItem = undefined;
 const options = [_][*:0]const u8{ "a", "b", "c" };
 var o: *pd.system.AnyOptionsMenuItem = undefined;
 pub fn init() !void {
+    _ = pd.system.allocator();
     m = pd.system.MenuItem(u32).newWithCallback("normal", callback, &x);
     c = pd.system.AnyCheckmarkMenuItem.new("checkmark", .unchecked);
     o = pd.system.AnyOptionsMenuItem.new("options", &options);

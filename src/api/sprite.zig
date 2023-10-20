@@ -1,42 +1,39 @@
 const std = @import("std");
 const pdapi = @import("../api.zig");
+const plt = @import("plt.zig");
 const graphics = pdapi.graphics;
 
 const raw = @import("playdate_raw");
-var spr: *const raw.PlaydateSprite = undefined;
-pub fn init(pdspr: *const raw.PlaydateSprite) void {
-    spr = pdspr;
-}
 
 pub fn setAlwaysRedraw(enable: bool) void {
-    spr.setAlwaysRedraw(@intFromBool(enable));
+    plt.pd.sprite_setAlwaysRedraw(@intFromBool(enable));
 }
 pub fn addDirtyRect(rect: graphics.LCDRect) void {
-    spr.addDirtyRect(rect);
+    plt.pd.sprite_addDirtyRect(rect);
 }
 pub fn drawSprites() void {
-    spr.drawSprites();
+    plt.pd.sprite_drawSprites();
 }
 pub fn updateAndDrawSprites() void {
-    spr.updateAndDrawSprites();
+    plt.pd.sprite_updateAndDrawSprites();
 }
 pub fn removeSprites(sprites: []*AnySprite) void {
-    spr.removeSprites(sprites.ptr, @intCast(sprites.len));
+    plt.pd.sprite_removeSprites(sprites.ptr, @intCast(sprites.len));
 }
 pub fn removeAllSprites() void {
-    spr.removeAllSprites();
+    plt.pd.sprite_removeAllSprites();
 }
 pub fn getSpriteCount() u16 {
-    return @intCast(spr.getSpriteCount());
+    return @intCast(plt.pd.sprite_getSpriteCount());
 }
 pub fn setClipRectsInRange(rect: graphics.LCDRect, start_z: c_int, end_z: c_int) void {
-    spr.setClipRectsInRange(rect, start_z, end_z);
+    plt.pd.sprite_setClipRectsInRange(rect, start_z, end_z);
 }
 pub fn clearClipRectsInRange(start_z: c_int, end_z: c_int) void {
-    spr.clearClipRectsInRange(start_z, end_z);
+    plt.pd.sprite_clearClipRectsInRange(start_z, end_z);
 }
 pub fn resetCollisionWorld() void {
-    spr.resetCollisionWorld();
+    plt.pd.sprite_resetCollisionWorld();
 }
 
 /// A sprite with `userdata` of type Userdata. This
@@ -49,11 +46,11 @@ pub fn Sprite(comptime Userdata: type) type {
         const Self = @This();
 
         pub fn setUserdata(self: *Self, userdata: *Userdata) void {
-            spr.setUserdata(self.any(), userdata);
+            plt.pd.sprite_setUserdata(self.any(), userdata);
         }
         /// returns null if setUserdata has not yet been called
         pub fn getUserdata(self: *Self) ?*Userdata {
-            return @ptrCast(@alignCast(spr.getUserdata(self.any())));
+            return @ptrCast(@alignCast(plt.pd.sprite_getUserdata(self.any())));
         }
 
         pub fn new() error{OutOfMemory}!*Self {
@@ -247,113 +244,113 @@ pub fn Sprite(comptime Userdata: type) type {
 /// such as functions that do not access the sprites userdata.
 pub const AnySprite = opaque {
     pub fn new() error{OutOfMemory}!*AnySprite {
-        return if (spr.newSprite()) |ptr| @ptrCast(ptr) else error.OutOfMemory;
+        return if (plt.pd.sprite_newSprite()) |ptr| @ptrCast(ptr) else error.OutOfMemory;
     }
     pub fn destroy(self: *AnySprite) void {
-        spr.freeSprite(@ptrCast(self));
+        plt.pd.sprite_freeSprite(@ptrCast(self));
     }
     pub fn copy(self: *AnySprite) error{OutOfMemory}!*AnySprite {
-        return if (spr.copy(@ptrCast(self))) |ptr| @ptrCast(ptr) else error.OutOfMemory;
+        return if (plt.pd.sprite_copy(@ptrCast(self))) |ptr| @ptrCast(ptr) else error.OutOfMemory;
     }
     pub fn add(self: *AnySprite) void {
-        spr.addSprite(self);
+        plt.pd.sprite_addSprite(self);
     }
     pub fn remove(self: *AnySprite) void {
-        spr.removeSprite(self);
+        plt.pd.sprite_removeSprite(self);
     }
     pub fn setBounds(self: *AnySprite, bounds: Rect) void {
-        spr.setBounds(self, bounds);
+        plt.pd.sprite_setBounds(self, bounds);
     }
     pub fn getBounds(self: *AnySprite) Rect {
-        return spr.getBounds(self);
+        return plt.pd.sprite_getBounds(self);
     }
     pub fn moveTo(self: *AnySprite, x: f32, y: f32) void {
-        spr.moveTo(self, x, y);
+        plt.pd.sprite_moveTo(self, x, y);
     }
     pub fn moveBy(self: *AnySprite, dx: f32, dy: f32) void {
-        spr.moveBy(self, dx, dy);
+        plt.pd.sprite_moveBy(self, dx, dy);
     }
     pub fn setImage(self: *AnySprite, image: *graphics.Bitmap, flip: graphics.BitmapFlip) void {
-        spr.setImage(self, image, flip);
+        plt.pd.sprite_setImage(self, image, flip);
     }
     pub fn getImage(self: *AnySprite) ?*graphics.Bitmap {
-        return spr.getImage(self);
+        return plt.pd.sprite_getImage(self);
     }
     pub fn setSize(self: *AnySprite, width: f32, height: f32) void {
-        spr.setSize(self, width, height);
+        plt.pd.sprite_setSize(self, width, height);
     }
     pub fn setZIndex(self: *AnySprite, z_index: i16) void {
-        spr.setZIndex(self, z_index);
+        plt.pd.sprite_setZIndex(self, z_index);
     }
     pub fn getZIndex(self: *AnySprite) i16 {
-        return spr.getZIndex(self);
+        return plt.pd.sprite_getZIndex(self);
     }
 
     pub fn setDrawMode(self: *AnySprite, mode: graphics.BitmapDrawMode) void {
-        spr.setDrawMode(self, mode);
+        plt.pd.sprite_setDrawMode(self, mode);
     }
     pub fn setImageFlip(self: *AnySprite, flip: graphics.BitmapFlip) void {
-        spr.setImageFlip(self, flip);
+        plt.pd.sprite_setImageFlip(self, flip);
     }
     pub fn getImageFlip(self: *AnySprite) graphics.BitmapFlip {
-        return spr.getImageFlip(self);
+        return plt.pd.sprite_getImageFlip(self);
     }
     pub fn setClipRect(self: *AnySprite, clip_rect: graphics.LCDRect) void {
-        spr.setClipRect(self, clip_rect);
+        plt.pd.sprite_setClipRect(self, clip_rect);
     }
     pub fn clearClipRect(self: *AnySprite) void {
-        spr.clearClipRect(self);
+        plt.pd.sprite_clearClipRect(self);
     }
     pub fn setUpdatesEnabled(self: *AnySprite, enabled: bool) void {
-        spr.setUpdatesEnabled(self, @intFromBool(enabled));
+        plt.pd.sprite_setUpdatesEnabled(self, @intFromBool(enabled));
     }
     pub fn updatesEnabled(self: *AnySprite) bool {
-        return switch (spr.updatesEnabled(self)) {
+        return switch (plt.pd.sprite_updatesEnabled(self)) {
             0 => false,
             1 => true,
             else => unreachable,
         };
     }
     pub fn setCollisionsEnabled(self: *AnySprite, enabled: bool) void {
-        spr.setCollisionsEnabled(self, @intFromBool(enabled));
+        plt.pd.sprite_setCollisionsEnabled(self, @intFromBool(enabled));
     }
     pub fn collisionsEnabled(self: *AnySprite) bool {
-        return switch (spr.collisionsEnabled(self)) {
+        return switch (plt.pd.sprite_collisionsEnabled(self)) {
             0 => false,
             1 => true,
             else => unreachable,
         };
     }
     pub fn setVisible(self: *AnySprite, enabled: bool) void {
-        spr.setVisible(self, @intFromBool(enabled));
+        plt.pd.sprite_setVisible(self, @intFromBool(enabled));
     }
     pub fn isVisible(self: *AnySprite) bool {
-        return switch (spr.isVisible(self)) {
+        return switch (plt.pd.sprite_isVisible(self)) {
             0 => false,
             1 => true,
             else => unreachable,
         };
     }
     pub fn setOpaque(self: *AnySprite, enabled: bool) void {
-        spr.setOpaque(self, @intFromBool(enabled));
+        plt.pd.sprite_setOpaque(self, @intFromBool(enabled));
     }
     pub fn markDirty(self: *AnySprite) void {
-        spr.markDirty(self);
+        plt.pd.sprite_markDirty(self);
     }
 
     pub fn setTag(self: *AnySprite, tag: u8) void {
-        spr.setTag(self, tag);
+        plt.pd.sprite_setTag(self, tag);
     }
     pub fn getTag(self: *AnySprite) u8 {
-        return spr.getTag(self);
+        return plt.pd.sprite_getTag(self);
     }
 
     pub fn setIgnoresDrawOffset(self: *AnySprite, enabled: bool) void {
-        spr.setIgnoresDrawOffset(self, @intFromBool(enabled));
+        plt.pd.sprite_setIgnoresDrawOffset(self, @intFromBool(enabled));
     }
 
     pub fn setUpdateFunction(self: *AnySprite, comptime update: fn (self: *AnySprite) void) void {
-        spr.setUpdateFunction(self, struct {
+        plt.pd.sprite_setUpdateFunction(self, struct {
             pub fn f(s: *AnySprite) callconv(.C) void {
                 update(s);
             }
@@ -364,7 +361,7 @@ pub const AnySprite = opaque {
         self: *AnySprite,
         comptime draw: fn (self: *AnySprite, bounds: Rect, drawrect: Rect) void,
     ) void {
-        spr.setDrawFunction(self, struct {
+        plt.pd.sprite_setDrawFunction(self, struct {
             pub fn f(s: *AnySprite, bounds: Rect, drawrect: Rect) callconv(.C) void {
                 draw(s, bounds, drawrect);
             }
@@ -373,25 +370,25 @@ pub const AnySprite = opaque {
 
     pub fn getPosition(self: *AnySprite) struct { x: f32, y: f32 } {
         var x, var y = [_]f32{undefined} ** 2;
-        spr.getPosition(self, &x, &y);
+        plt.pd.sprite_getPosition(self, &x, &y);
         return .{ .x = x, .y = y };
     }
 
     pub fn setCollideRect(self: *AnySprite, collide_rect: Rect) void {
-        spr.setCollideRect(self, collide_rect);
+        plt.pd.sprite_setCollideRect(self, collide_rect);
     }
     pub fn getCollideRect(self: *AnySprite) Rect {
-        return spr.getCollideRect(self);
+        return plt.pd.sprite_getCollideRect(self);
     }
     pub fn clearCollideRect(self: *AnySprite) void {
-        spr.clearCollideRect(self);
+        plt.pd.sprite_clearCollideRect(self);
     }
 
     pub fn setCollisionResponseFunction(
         self: *AnySprite,
         comptime func: fn (self: *AnySprite, other: *AnySprite) CollisionResponse,
     ) void {
-        spr.setCollisionResponseFunction(self, struct {
+        plt.pd.sprite_setCollisionResponseFunction(self, struct {
             pub fn f(s: *AnySprite, o: *AnySprite) callconv(.C) CollisionResponse {
                 return func(s, o);
             }
@@ -408,7 +405,7 @@ pub const AnySprite = opaque {
     ) CollisionResolution {
         var actualX, var actualY = [_]f32{undefined} ** 2;
         var len: c_int = undefined;
-        const ptr = spr.checkCollisions(self, x, y, &actualX, &actualY, &len);
+        const ptr = plt.pd.sprite_checkCollisions(self, x, y, &actualX, &actualY, &len);
         std.debug.assert((ptr == null and len == 0) or (ptr != null and len != 0));
         return .{
             .x = actualX,
@@ -427,7 +424,7 @@ pub const AnySprite = opaque {
     ) CollisionResolution {
         var actualX, var actualY = [_]f32{undefined} ** 2;
         var len: c_int = undefined;
-        const ptr = spr.moveWithCollisions(self, x, y, &actualX, &actualY, &len);
+        const ptr = plt.pd.sprite_moveWithCollisions(self, x, y, &actualX, &actualY, &len);
         std.debug.assert((ptr == null and len == 0) or (ptr != null and len != 0));
         return .{
             .x = actualX,
@@ -439,19 +436,19 @@ pub const AnySprite = opaque {
     /// caller owns memory
     pub fn overlappingSprites(self: *AnySprite) []*AnySprite {
         var len: c_int = undefined;
-        const ptr = spr.overlappingSprites(self, &len);
+        const ptr = plt.pd.sprite_overlappingSprites(self, &len);
         return ptr[0..@intCast(len)];
     }
 
     pub fn setStencilPattern(self: *AnySprite, pattern: [8]u8) void {
-        spr.setStencilPattern(self, &pattern);
+        plt.pd.sprite_setStencilPattern(self, &pattern);
     }
     pub fn clearStencil(self: *AnySprite) void {
-        spr.clearStencil(self);
+        plt.pd.sprite_clearStencil(self);
     }
 
     pub fn setStencilImage(self: *AnySprite, stencil: *graphics.Bitmap, tile: bool) void {
-        spr.setStencilImage(self, stencil, @intFromBool(tile));
+        plt.pd.sprite_setStencilImage(self, stencil, @intFromBool(tile));
     }
 };
 
@@ -471,31 +468,31 @@ pub const query = struct {
     /// caller owns memory
     pub fn spritesAtPoint(x: f32, y: f32) []*AnySprite {
         var len: c_int = undefined;
-        const ptr = spr.querySpritesAtPoint(x, y, &len);
+        const ptr = plt.pd.sprite_querySpritesAtPoint(x, y, &len);
         return ptr[0..@intCast(len)];
     }
     /// caller owns memory
     pub fn spritesInRect(rect: Rect) []*AnySprite {
         var len: c_int = undefined;
-        const ptr = spr.querySpritesInRect(rect.x, rect.y, rect.width, rect.height, &len);
+        const ptr = plt.pd.sprite_querySpritesInRect(rect.x, rect.y, rect.width, rect.height, &len);
         return ptr[0..@intCast(len)];
     }
     /// caller owns memory
     pub fn spritesAlongLine(x1: f32, y1: f32, x2: f32, y2: f32) []*AnySprite {
         var len: c_int = undefined;
-        const ptr = spr.querySpritesAlongLine(x1, y1, x2, y2, &len);
+        const ptr = plt.pd.sprite_querySpritesAlongLine(x1, y1, x2, y2, &len);
         return ptr[0..@intCast(len)];
     }
     /// caller owns memory
     pub fn spriteInfoAlongLine(x1: f32, y1: f32, x2: f32, y2: f32) []Info {
         var len: c_int = undefined;
-        const ptr = spr.querySpriteInfoAlongLine(x1, y1, x2, y2, &len);
+        const ptr = plt.pd.sprite_querySpriteInfoAlongLine(x1, y1, x2, y2, &len);
         return ptr[0..@intCast(len)];
     }
     /// caller owns memory
     pub fn allOverlappingSprites() []*AnySprite {
         var len: c_int = undefined;
-        const ptr = spr.allOverlappingSprites(&len);
+        const ptr = plt.pd.sprite_allOverlappingSprites(&len);
         return ptr[0..@intCast(len)];
     }
 };

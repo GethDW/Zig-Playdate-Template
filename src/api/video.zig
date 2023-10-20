@@ -1,36 +1,33 @@
 const pdapi = @import("../api.zig");
+const plt = @import("plt.zig");
 const system = pdapi.system;
 const graphics = pdapi.graphics;
 
 const raw = @import("playdate_raw");
-var vid: *const raw.PlaydateVideo = undefined;
-pub fn init(pdvid: *const raw.PlaydateVideo) void {
-    vid = pdvid;
-}
 
 pub const VideoPlayer = opaque {
     pub fn load(path: [*:0]const u8) error{LoadFail}!*VideoPlayer {
-        return vid.loadVideo(path) orelse error.LoadFail;
+        return if (plt.pd.graphics_video_loadVideo(path)) |ptr| @ptrCast(ptr) else error.LoadFail;
     }
 
     pub fn free(self: *VideoPlayer) void {
-        vid.freePlayer(self);
+        plt.pd.graphics_video_freePlayer(@ptrCast(self));
     }
 
     pub fn setContext(self: *VideoPlayer, bitmap: *graphics.Bitmap) error{ContextFail}!void {
-        if (vid.setContext(self, bitmap) != 0) {
-            system.log("error: %s", vid.getError());
+        if (plt.pd.graphics_video_setContext(@ptrCast(self), bitmap) != 0) {
+            system.log("error: %s", plt.pd.graphics_video_getError());
             return error.LoadFail;
         }
     }
 
     pub fn useScreenContext(self: *VideoPlayer) void {
-        vid.useScreenContext(self);
+        plt.pd.graphics_video_useScreenContext(@ptrCast(self));
     }
 
     pub fn renderFrame(self: *VideoPlayer, frame: u16) error{RenderError}!void {
-        if (vid.renderFrame(self, @intCast(frame)) != 0) {
-            system.log("error: %s", vid.getError());
+        if (plt.pd.graphics_video_renderFrame(@ptrCast(self), @intCast(frame)) != 0) {
+            system.log("error: %s", plt.pd.graphics_video_getError());
             return error.LoadFail;
         }
     }
@@ -44,7 +41,7 @@ pub const VideoPlayer = opaque {
     };
     pub fn getInfo(self: *const VideoPlayer) Info {
         var width: c_int, var height: c_int, var framerate: f32, var frame_count: c_int, var current_frame: c_int = .{undefined} ** 5;
-        vid.getInfo(@ptrCast(@constCast(self)), &width, &height, &framerate, &frame_count, &current_frame);
+        plt.pd.graphics_video_getInfo(@ptrCast(@constCast(self)), &width, &height, &framerate, &frame_count, &current_frame);
         return Info{
             .width = @intCast(width),
             .height = @intCast(height),
@@ -55,6 +52,6 @@ pub const VideoPlayer = opaque {
     }
 
     pub fn getContext(self: *VideoPlayer) error{ContextFail}!*graphics.Bitmap {
-        return vid.getContext(self) orelse error.ContextFail;
+        return plt.pd.graphics_video_getContext(@ptrCast(self)) orelse error.ContextFail;
     }
 };

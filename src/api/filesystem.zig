@@ -1,12 +1,9 @@
 const std = @import("std");
 const pdapi = @import("../api.zig");
+const plt = @import("plt.zig");
 const system = pdapi.system;
 
 const raw = @import("playdate_raw");
-var fs: *const raw.PlaydateFile = undefined;
-pub fn init(pdfile: *const raw.PlaydateFile) void {
-    fs = pdfile;
-}
 
 pub const File = opaque {
     pub const OpenOptions = packed struct(raw.FileOptions) {
@@ -18,29 +15,29 @@ pub const File = opaque {
     };
     // open: *const fn (path: [*:0]const u8, options: FileOptions) callconv(.C) ?*File,
     pub fn open(path: [*:0]const u8, options: OpenOptions) error{OpenFail}!*File {
-        if (fs.open(path, @bitCast(options))) |file| {
+        if (plt.pd.file_open(path, @bitCast(options))) |file| {
             return file;
         } else {
-            system.err("error: %s", fs.geterr());
+            system.err("error: %s", plt.pd.file_geterr());
             return error.OpenFail;
         }
     }
 
     // close: *const fn (file: *File) callconv(.C) c_int,
     pub fn close(self: *File) error{CloseFail}!void {
-        if (fs.close(self) != 0) {
-            system.err("error: %s", fs.geterr());
+        if (plt.pd.file_close(self) != 0) {
+            system.err("error: %s", plt.pd.file_geterr());
             return error.CloseFail;
         }
     }
 
     // read: *const fn (file: *File, buf: *anyopaque, len: c_uint) callconv(.C) c_int,
     pub fn read(self: *File, bytes: []u8) ReadError!usize {
-        const len = fs.read(self, bytes.ptr, bytes.len);
+        const len = plt.pd.file_read(self, bytes.ptr, bytes.len);
         if (len >= 0) {
             return len;
         } else {
-            system.err("error: %s", fs.geterr());
+            system.err("error: %s", plt.pd.file_geterr());
             return error.ReadFail;
         }
     }
@@ -52,11 +49,11 @@ pub const File = opaque {
 
     // write: *const fn (file: *File, buf: *const anyopaque, len: c_uint) callconv(.C) c_int,
     pub fn write(self: *File, bytes: []const u8) WriteError!usize {
-        const len = fs.write(self, bytes.ptr, @intCast(bytes.len));
+        const len = plt.pd.file_write(self, bytes.ptr, @intCast(bytes.len));
         if (len >= 0) {
             return @intCast(len);
         } else {
-            system.err("error: %s", fs.geterr());
+            system.err("error: %s", plt.pd.file_geterr());
             return error.WriteFail;
         }
     }
@@ -68,11 +65,11 @@ pub const File = opaque {
 
     // flush: *const fn (file: *File) callconv(.C) c_int,
     pub fn flush(self: *File) WriteError!usize {
-        const len = fs.flush(self);
+        const len = plt.pd.file_flush(self);
         if (len >= 0) {
             return @intCast(len);
         } else {
-            system.err("error: %s", fs.geterr());
+            system.err("error: %s", plt.pd.file_geterr());
             return error.WriteFail;
         }
     }
@@ -94,23 +91,23 @@ pub const File = opaque {
 
     // tell: *const fn (file: *File) callconv(.C) c_int,
     pub fn tell(self: *File) error{TellFail}!usize {
-        const offset = fs.tell(self);
+        const offset = plt.pd.file_tell(self);
         if (offset >= 0) {
             return offset;
         } else {
-            system.err("error: %s", fs.geterr());
+            system.err("error: %s", plt.pd.file_geterr());
             return error.TellFail;
         }
     }
 
     // seek: *const fn (file: *File, pos: c_int, whence: c_int) callconv(.C) c_int,
     pub fn seek(self: *File, pos: i32, whence: enum { set, current, end }) error{SeekFail}!void {
-        if (fs.seek(self, pos, switch (whence) {
+        if (plt.pd.file_seek(self, pos, switch (whence) {
             .set => raw.SEEK_SET,
             .current => raw.SEEK_CUR,
             .end => raw.SEEK_END,
         }) != 0) {
-            system.err("error: %s", fs.geterr());
+            system.err("error: %s", plt.pd.file_geterr());
             return error.SeekFail;
         }
     }
@@ -135,7 +132,7 @@ pub fn listFilesContext(
             Context.callback(ctx, p);
         }
     }.f;
-    fs.listfiles(path, listCallback, context, if (show_hidden) 1 else 0);
+    plt.pd.file_listfiles(path, listCallback, context, if (show_hidden) 1 else 0);
 }
 
 pub fn listFiles(
@@ -148,7 +145,7 @@ pub fn listFiles(
             callback(p);
         }
     }.f;
-    fs.listfiles(path, listCallback, null, if (show_hidden) 1 else 0);
+    plt.pd.file_listfiles(path, listCallback, null, if (show_hidden) 1 else 0);
 }
 
 // stat: *const fn (path: [*:0]const u8, stat: ?*FileStat) callconv(.C) c_int,
@@ -164,8 +161,8 @@ pub const Stat = struct {
 };
 pub fn stat(path: [*:0]const u8) error{StatFail}!Stat {
     var s: raw.FileStat = undefined;
-    if (fs.stat(path, &s) != 0) {
-        system.err("error: %s", fs.geterr());
+    if (plt.pd.file_stat(path, &s) != 0) {
+        system.err("error: %s", plt.pd.file_geterr());
         return error.StatFail;
     }
     return Stat{
@@ -182,24 +179,24 @@ pub fn stat(path: [*:0]const u8) error{StatFail}!Stat {
 
 // mkdir: *const fn (path: [*:0]const u8) callconv(.C) c_int,
 pub fn mkdir(path: [*:0]const u8) error{MkdirFail}!void {
-    if (fs.mkdir(path) != 0) {
-        system.err("error: %s", fs.geterr());
+    if (plt.pd.file_mkdir(path) != 0) {
+        system.err("error: %s", plt.pd.file_geterr());
         return error.MkdirFail;
     }
 }
 
 // unlink: *const fn (path: [*:0]const u8, recursive: c_int) callconv(.C) c_int,
 pub fn unlink(path: [*:0]const u8, recursive: bool) error{UnlinkFail}!void {
-    if (fs.unlink(path, @intFromBool(recursive)) != 0) {
-        system.err("error: %s", fs.geterr());
+    if (plt.pd.file_unlink(path, @intFromBool(recursive)) != 0) {
+        system.err("error: %s", plt.pd.file_geterr());
         return error.UnlinkFail;
     }
 }
 
 // rename: *const fn (from: [*:0]const u8, to: [*c]const u8) callconv(.C) c_int,
 pub fn rename(from: [*:0]const u8, to: [*:0]const u8) error{RenameFail}!void {
-    if (fs.rename(from, to) != 0) {
-        system.err("error: %s", fs.geterr());
+    if (plt.pd.file_rename(from, to) != 0) {
+        system.err("error: %s", plt.pd.file_geterr());
         return error.RenameFail;
     }
 }

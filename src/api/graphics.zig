@@ -1,11 +1,7 @@
 const pdapi = @import("../api.zig");
+const plt = @import("plt.zig");
 
 const raw = @import("playdate_raw");
-var gfx: *const raw.PlaydateGraphics = undefined;
-pub fn init(pdgfx: *const raw.PlaydateGraphics) void {
-    gfx = pdgfx;
-    video.init(gfx.video);
-}
 
 pub const video = @import("video.zig");
 
@@ -22,7 +18,7 @@ pub const Color = union(enum(c_int)) {
 };
 
 pub fn clear(color: Color) void {
-    gfx.clear(switch (color) {
+    plt.pd.graphics_clear(switch (color) {
         .Pattern => |pattern| @intFromPtr(pattern),
         else => |c| @intCast(@intFromEnum(c)),
     });
@@ -31,19 +27,19 @@ pub fn clear(color: Color) void {
 pub const Bitmap = opaque {
     // newBitmap: *const fn (width: c_int, height: c_int, color: graphics.LCDColor) callconv(.C) ?*graphics.Bitmap,
     pub fn new(width: u16, height: u16, color: Color) error{OutOfMemory}!*Bitmap {
-        return gfx.newBitmap(width, height, switch (color) {
+        return plt.pd.graphics_newBitmap(width, height, switch (color) {
             .Pattern => |pattern| @intFromPtr(pattern),
             else => |c| @intCast(@intFromEnum(c)),
         }) orelse error.OutOfMemory;
     }
     // freeBitmap: *const fn (bitmap: ?*graphics.Bitmap) callconv(.C) void,
     pub fn free(self: *Bitmap) void {
-        gfx.freeBitmap(self);
+        plt.pd.graphics_freeBitmap(self);
     }
     // loadBitmap: *const fn (path: [*:0]const u8, outerr: ?*[*:0]const u8) callconv(.C) ?*graphics.Bitmap,
     pub fn loadBitmap(path: [*:0]const u8) error{FileNotFound}!*Bitmap {
         var out_err: [*:0]const u8 = undefined;
-        if (gfx.loadBitmap(path, &out_err)) |ptr| {
+        if (plt.pd.graphics_loadBitmap(path, &out_err)) |ptr| {
             return ptr;
         } else {
             pdapi.system.log("error: failed to load bitmap, %s", out_err);
@@ -52,12 +48,12 @@ pub const Bitmap = opaque {
     }
     // copyBitmap: *const fn (bitmap: ?*graphics.Bitmap) callconv(.C) ?*graphics.Bitmap,
     pub fn copy(self: *Bitmap) error{OutOfMemory}!*Bitmap {
-        return gfx.copyBitmap(self) orelse error.OutOfMemory;
+        return plt.pd.graphics_copyBitmap(self) orelse error.OutOfMemory;
     }
     // loadIntoBitmap: *const fn (path: [*:0]const u8, bitmap: ?*graphics.Bitmap, outerr: ?*[*:0]const u8) callconv(.C) void,
     pub fn loadInto(self: *Bitmap, path: [*:0]const u8) error{LoadFail}!void {
         var out_err: [*:0]const u8 = undefined;
-        if (gfx.loadIntoBitmap(path, self, &out_err)) |ptr| {
+        if (plt.pd.graphics_loadIntoBitmap(path, self, &out_err)) |ptr| {
             return ptr;
         } else {
             pdapi.system.log("error: failed to load bitmap, %s", out_err);
@@ -77,7 +73,7 @@ pub const Bitmap = opaque {
         var row_bytes: u16 = undefined;
         var mask: ?[*]u8 = undefined;
         var data: [*]u8 = undefined;
-        gfx.getBitmapData(self, &width, &height, &row_bytes, &mask, &data);
+        plt.pd.graphics_getBitmapData(self, &width, &height, &row_bytes, &mask, &data);
         return .{
             .width = width,
             .height = height,

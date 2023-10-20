@@ -6,11 +6,10 @@ pub const graphics = @import("api/graphics.zig");
 pub const system = @import("api/system.zig");
 pub const filesystem = @import("api/filesystem.zig");
 pub const lua = @import("api/lua.zig");
+const plt = @import("api/plt.zig");
 
 pub fn init(pd: *raw.PlaydateAPI) void {
-    system.init(pd.system);
-    sprite.init(pd.sprite);
-    graphics.init(pd.graphics);
-    filesystem.init(pd.file);
-    lua.init(pd.lua);
+    plt.init(pd);
+    system.log = plt.pd.system_logToConsole;
+    system.err = plt.pd.system_error;
 }
