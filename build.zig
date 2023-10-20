@@ -16,7 +16,7 @@ const std = @import("std");
 /// 		.optimize = optimize,
 /// 		.pdxinfo = .{ .path = "src/pdxinfo" },
 /// 	});
-/// 	pdx.addFile(.{ .path = "assets/icon.png" });
+/// 	pdx.addFile(.{ .path = "assets/icon.png" }, "icon.png");
 ///
 ///		pdx.install(b);
 ///

@@ -84,7 +84,7 @@ pub const Buttons = packed struct(c_int) {
         released: Buttons,
     } {
         var current, var pushed, var released = [_]Buttons{undefined} ** 3;
-        plt.pd.sytem_getButtonState(&current, &pushed, &released);
+        plt.pd.system_getButtonState(@ptrCast(&current), @ptrCast(&pushed), @ptrCast(&released));
         return .{
             .current = current,
             .pushed = pushed,

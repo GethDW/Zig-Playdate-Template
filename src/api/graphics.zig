@@ -24,6 +24,22 @@ pub fn clear(color: Color) void {
     });
 }
 
+// drawEllipse: *const fn (x: c_int, y: c_int, width: c_int, height: c_int, lineWidth: c_int, startAngle: f32, endAngle: f32, color: LCDColor) callconv(.C) void,
+pub fn drawEllipse(x: i32, y: i32, width: i32, height: i32, line_width: i32, start_angle: f32, end_angle: f32, color: Color) void {
+    plt.pd.graphics_drawEllipse(x, y, width, height, line_width, start_angle, end_angle, switch (color) {
+        .Pattern => |pattern| @intFromPtr(pattern),
+        else => |c| @intCast(@intFromEnum(c)),
+    });
+}
+
+// drawLine: *const fn (x1: c_int, y1: c_int, x2: c_int, y2: c_int, width: c_int, color: LCDColor) callconv(.C) void,
+pub fn drawLine(x1: i32, y1: i32, x2: i32, y2: i32, width: i32, color: Color) void {
+    plt.pd.graphics_drawLine(x1, y1, x2, y2, width, switch (color) {
+        .Pattern => |pattern| @intFromPtr(pattern),
+        else => |c| @intCast(@intFromEnum(c)),
+    });
+}
+
 pub const Bitmap = opaque {
     // newBitmap: *const fn (width: c_int, height: c_int, color: graphics.LCDColor) callconv(.C) ?*graphics.Bitmap,
     pub fn new(width: u16, height: u16, color: Color) error{OutOfMemory}!*Bitmap {
