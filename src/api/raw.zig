@@ -1,6 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
+// TODO: don't include fields that don't exist for the specified SDK version.
 pub const PlaydateAPI = extern struct {
     system: *const PlaydateSys,
     file: *const PlaydateFile,
@@ -118,21 +119,21 @@ pub const PlaydateSys = extern struct {
 
     getReduceFlashing: *const fn () callconv(.C) c_int,
 
-    // 1.1
+    @"1.1.0": void,
     getElapsedTime: *const fn () callconv(.C) f32,
     resetElapsedTime: *const fn () callconv(.C) void,
 
-    // 1.4
+    @"1.4.0": void,
     getBatteryPercentage: *const fn () callconv(.C) f32,
     getBatteryVoltage: *const fn () callconv(.C) f32,
 
-    // 1.13
+    @"1.13.0": void,
     getTimezoneOffset: *const fn () callconv(.C) i32,
     shouldDisplay24HourTime: *const fn () callconv(.C) c_int,
     convertEpochToDateTime: *const fn (epoch: u32, datetime: *PDDateTime) callconv(.C) void,
     convertDateTimeToEpoch: *const fn (datetime: *PDDateTime) callconv(.C) u32,
 
-    //2.0
+    @"2.0.0": void,
     clearICache: *const fn () callconv(.C) void,
 };
 
@@ -269,26 +270,26 @@ pub const PlaydateGraphics = extern struct {
     setColorToPattern: *const fn (color: *LCDColor, bitmap: *LCDBitmap, x: c_int, y: c_int) callconv(.C) void,
     checkMaskCollision: *const fn (bitmap1: *LCDBitmap, x1: c_int, y1: c_int, flip1: LCDBitmapFlip, bitmap2: *LCDBitmap, x2: c_int, y2: c_int, flip2: LCDBitmapFlip, rect: LCDRect) callconv(.C) c_int,
 
-    // 1.1
+    @"1.1.0": void,
     setScreenClipRect: *const fn (x: c_int, y: c_int, width: c_int, height: c_int) callconv(.C) void,
 
-    // 1.1.1
+    @"1.1.1": void,
     fillPolygon: *const fn (nPoints: c_int, coords: [*]c_int, color: LCDColor, fillRule: LCDPolygonFillRule) callconv(.C) void,
     getFontHeight: *const fn (font: *LCDFont) callconv(.C) u8,
 
-    // 1.7
+    @"1.7.0": void,
     getDisplayBufferBitmap: *const fn () callconv(.C) ?*LCDBitmap,
     drawRotatedBitmap: *const fn (bitmap: ?*LCDBitmap, x: c_int, y: c_int, rotation: f32, centerx: f32, centery: f32, xscale: f32, yscale: f32) callconv(.C) void,
     setTextLeading: *const fn (lineHeightAdustment: c_int) callconv(.C) void,
 
-    // 1.8
+    @"1.8.0": void,
     setBitmapMask: *const fn (bitmap: *LCDBitmap, mask: *LCDBitmap) callconv(.C) c_int,
     getBitmapMask: *const fn (bitmap: *LCDBitmap) callconv(.C) ?*LCDBitmap,
 
-    // 1.10
+    @"1.10.0": void,
     setStencilImage: *const fn (stencil: *LCDBitmap, tile: c_int) callconv(.C) void,
 
-    // 1.12
+    @"1.12.0": void,
     makeFontFromData: *const fn (data: *LCDFontData, wide: c_int) callconv(.C) *LCDFont,
 };
 pub const PlaydateDisplay = struct {
@@ -379,10 +380,10 @@ pub const PlaydateSound = extern struct {
     getHeadphoneState: *const fn (headphone: ?*c_int, headsetmic: ?*c_int, changeCallback: *const fn (headphone: c_int, mic: c_int) callconv(.C) void) callconv(.C) void,
     setOutputsActive: *const fn (headphone: c_int, mic: c_int) callconv(.C) void,
 
-    // 1.5
+    @"1.5.0": void,
     removeSource: *const fn (*SoundSource) callconv(.C) void,
 
-    // 1.12
+    @"1.12.0": void,
     signal: *const PlaydateSoundSignal,
 };
 
@@ -592,7 +593,7 @@ pub const PlaydateSoundSynth = extern struct {
 
     isPlaying: *const fn (synth: ?*PDSynth) callconv(.C) c_int,
 
-    // 1.13
+    @"1.13.0": void,
     getEnvelope: *const fn (synth: ?*PDSynth) callconv(.C) ?*PDSynthEnvelope, // synth keeps ownership--don't free this!
 };
 
@@ -616,7 +617,7 @@ pub const PlaydateSoundSequence = extern struct {
     setTrackAtIndex: *const fn (seq: ?*SoundSequence, ?*SequenceTrack, idx: c_uint) callconv(.C) void,
     allNotesOff: *const fn (seq: ?*SoundSequence) callconv(.C) void,
 
-    // 1.1
+    @"1.1.0": void,
     isPlaying: *const fn (seq: *SoundSequence) callconv(.C) c_int,
     getLength: *const fn (seq: *SoundSequence) callconv(.C) u32,
     play: *const fn (seq: *SoundSequence, finishCallback: *const SequenceFinishedCallback, userdata: ?*anyopaque) callconv(.C) void,
@@ -672,7 +673,7 @@ pub const PlaydateSoundLFO = extern struct {
 
     getValue: *const fn (lfo: ?*PDSynthLFO) callconv(.C) f32,
 
-    // 1.10
+    @"1.10.0": void,
     setGlobal: *const fn (lfo: ?*PDSynthLFO, global: c_int) callconv(.C) void,
 };
 
@@ -691,7 +692,7 @@ pub const PlaydateSoundEnvelope = extern struct {
 
     getValue: *const fn (env: ?*PDSynthEnvelope) callconv(.C) f32,
 
-    // 1.13
+    @"1.13.0": void,
     setCurvature: *const fn (env: ?*PDSynthEnvelope, amount: f32) callconv(.C) void,
     setVelocitySensitivity: *const fn (env: ?*PDSynthEnvelope, velsens: f32) callconv(.C) void,
     setRateScaling: *const fn (env: ?*PDSynthEnvelope, scaling: f32, start: MIDINote, end: MIDINote) callconv(.C) void,
@@ -734,12 +735,12 @@ pub const PlaydateSoundTrack = extern struct {
 
     setMuted: *const fn (track: ?*SequenceTrack, mute: c_int) callconv(.C) void,
 
-    // 1.1
+    @"1.1.0": void,
     getLength: *const fn (track: ?*SequenceTrack) callconv(.C) u32,
     getIndexForStep: *const fn (track: ?*SequenceTrack, step: u32) callconv(.C) c_int,
     getNoteAtIndex: *const fn (track: ?*SequenceTrack, index: c_int, outSteo: ?*u32, outLen: ?*u32, outeNote: ?*MIDINote, outVelocity: ?*f32) callconv(.C) c_int,
 
-    //1.10
+    @"1.10.0": void,
     getSignalForController: *const fn (track: ?*SequenceTrack, controller: c_int, create: c_int) callconv(.C) ?*ControlSignal,
 };
 
@@ -998,14 +999,14 @@ pub const PlaydateSprite = extern struct {
     overlappingSprites: *const fn (sprite: ?*LCDSprite, len: ?*c_int) callconv(.C) [*c]?*LCDSprite,
     allOverlappingSprites: *const fn (len: ?*c_int) callconv(.C) [*c]?*LCDSprite,
 
-    // added in 1.7
+    @"1.7.0": void,
     setStencilPattern: *const fn (sprite: ?*LCDSprite, pattern: [*c]u8) callconv(.C) void, //pattern is 8 bytes
     clearStencil: *const fn (sprite: ?*LCDSprite) callconv(.C) void,
 
     setUserdata: *const fn (sprite: ?*LCDSprite, userdata: ?*anyopaque) callconv(.C) void,
     getUserdata: *const fn (sprite: ?*LCDSprite) callconv(.C) ?*anyopaque,
 
-    // added in 1.10
+    @"1.10.0": void,
     setStencilImage: *const fn (sprite: ?*LCDSprite, stencil: ?*LCDBitmap, tile: c_int) callconv(.C) void,
 };
 

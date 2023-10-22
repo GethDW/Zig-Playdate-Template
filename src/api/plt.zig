@@ -1,52 +1,76 @@
+// WELCOME TO THE METAPROGRAMMING HELL HOLE!!!
+
+const std = @import("std");
+const api = @import("../api.zig");
 const PlaydateAPI = @import("playdate_raw").PlaydateAPI;
-const PlaydatePLT = blk: {
-    const total = tot: {
-        var acc: usize = 0;
-        inline for (@typeInfo(PlaydateAPI).Struct.fields) |field1| {
-            inline for (@typeInfo(@typeInfo(field1.type).Pointer.child).Struct.fields) |field2| {
-                switch (@typeInfo(@typeInfo(field2.type).Pointer.child)) {
-                    .Struct => |info| inline for (info.fields) |field3| {
-                        _ = field3;
-                        acc += 1;
-                    },
-                    .Fn => {
-                        acc += 1;
-                    },
-                    else => unreachable,
-                }
-            }
+
+fn iterateFnPtrs(
+    comptime S: type,
+    comptime names: []const []const u8,
+    ctx: anytype,
+    comptime callback: fn (comptime names: []const []const u8, comptime F: type, ctx: @TypeOf(ctx)) void,
+) void {
+    @setEvalBranchQuota(3000);
+    loop: inline for (@typeInfo(S).Struct.fields) |field| {
+        if (field.type == void) {
+            const version = comptime std.SemanticVersion.parse(field.name) catch unreachable;
+            if (comptime api.sdkIsAtLeast(version.major, version.minor, version.patch)) {
+                continue :loop;
+            } else break :loop;
         }
-        break :tot acc;
-    };
-    var i: usize = 0;
-    var fields: [total]@import("std").builtin.Type.StructField = undefined;
-    inline for (@typeInfo(PlaydateAPI).Struct.fields) |field1| {
-        inline for (@typeInfo(@typeInfo(field1.type).Pointer.child).Struct.fields) |field2| {
-            switch (@typeInfo(@typeInfo(field2.type).Pointer.child)) {
-                .Struct => |info| inline for (info.fields) |field3| {
-                    fields[i] = .{
-                        .name = field1.name ++ "_" ++ field2.name ++ "_" ++ field3.name,
-                        .type = field3.type,
-                        .default_value = null,
-                        .is_comptime = false,
-                        .alignment = field3.alignment,
-                    };
-                    i += 1;
-                },
-                .Fn => {
-                    fields[i] = .{
-                        .name = field1.name ++ "_" ++ field2.name,
-                        .type = field2.type,
-                        .default_value = null,
-                        .is_comptime = false,
-                        .alignment = field2.alignment,
-                    };
-                    i += 1;
-                },
-                else => unreachable,
-            }
+        switch (@typeInfo(@typeInfo(field.type).Pointer.child)) {
+            .Fn => |fn_info| callback(
+                names ++ &[1][]const u8{field.name},
+                @Type(.{ .Fn = fn_info }),
+                ctx,
+            ),
+            .Struct => |struct_info| iterateFnPtrs(
+                @Type(.{ .Struct = struct_info }),
+                names ++ &[1][]const u8{field.name},
+                ctx,
+                callback,
+            ),
+            else => {},
         }
     }
+}
+fn concatNames(comptime names: []const []const u8, comptime sep: []const u8) []const u8 {
+    @setEvalBranchQuota(4000);
+    return comptime if (names.len == 1) names[0] else name: {
+        comptime var name: []const u8 = names[0];
+        inline for (names[1..]) |n| name = name ++ sep ++ n;
+        break :name name;
+    };
+}
+
+const fn_ptr_count = blk: {
+    var acc: usize = 0;
+    iterateFnPtrs(PlaydateAPI, &.{}, &acc, struct {
+        pub fn f(comptime _: []const []const u8, comptime _: type, ctx: *usize) void {
+            ctx.* += 1;
+        }
+    }.f);
+    break :blk acc;
+};
+const PlaydatePLT = blk: {
+    const Fields = [fn_ptr_count]@import("std").builtin.Type.StructField;
+    const State = struct { fields: *Fields, i: usize = 0 };
+    var fields: Fields = undefined;
+    var state = State{ .fields = &fields };
+    iterateFnPtrs(PlaydateAPI, &.{}, &state, struct {
+        pub fn f(comptime names: []const []const u8, comptime F: type, comptime s: *State) void {
+            const name = concatNames(names, "_");
+            s.fields[s.i] = .{
+                .name = name,
+                .type = *const F,
+                .default_value = null,
+                .is_comptime = false,
+                .alignment = @alignOf(*const F),
+            };
+            s.i += 1;
+        }
+    }.f);
+
     break :blk @Type(.{ .Struct = .{
         .layout = .Auto,
         .fields = &fields,
@@ -54,21 +78,25 @@ const PlaydatePLT = blk: {
         .is_tuple = false,
     } });
 };
+
 pub var pd: PlaydatePLT = undefined;
 pub fn init(pd_raw: *const PlaydateAPI) void {
-    inline for (@typeInfo(PlaydateAPI).Struct.fields) |field1| {
-        inline for (@typeInfo(@typeInfo(field1.type).Pointer.child).Struct.fields) |field2| {
-            switch (@typeInfo(@typeInfo(field2.type).Pointer.child)) {
-                .Struct => |info| inline for (info.fields) |field3| {
-                    // @compileLog(field1.name ++ "_" ++ field2.name ++ "_" ++ field3.name ++ " <- " ++ field1.name ++ "." ++ field2.name ++ "." ++ field3.name);
-                    @field(pd, field1.name ++ "_" ++ field2.name ++ "_" ++ field3.name) = @field(@field(@field(pd_raw, field1.name), field2.name), field3.name);
-                },
-                .Fn => {
-                    // @compileLog(field1.name ++ "_" ++ field2.name ++ " <- " ++ field1.name ++ "." ++ field2.name);
-                    @field(pd, field1.name ++ "_" ++ field2.name) = @field(@field(pd_raw, field1.name), field2.name);
-                },
-                else => unreachable,
+    const Context = struct {
+        pd_raw: *const PlaydateAPI,
+        should_load: bool,
+    };
+    var context = Context{ .pd_raw = pd_raw, .should_load = true };
+    iterateFnPtrs(PlaydateAPI, &.{}, &context, struct {
+        pub fn f(comptime names: []const []const u8, comptime _: type, ctx: *Context) void {
+            const name = comptime concatNames(names, "_");
+            var ptr: *const anyopaque = @ptrCast(ctx.pd_raw);
+            comptime var FT: type = *const PlaydateAPI;
+            inline for (names) |n| {
+                const field = @field(@as(FT, @ptrCast(@alignCast(ptr))), n);
+                FT = @TypeOf(field);
+                ptr = @ptrCast(field);
             }
+            @field(pd, name) = @as(FT, @ptrCast(@alignCast(ptr)));
         }
-    }
+    }.f);
 }

@@ -2,6 +2,7 @@ const std = @import("std");
 const pdapi = @import("../api.zig");
 const plt = @import("plt.zig");
 const graphics = pdapi.graphics;
+const config = @import("config");
 
 const raw = @import("playdate_raw");
 
@@ -448,7 +449,8 @@ pub const AnySprite = opaque {
     }
 
     pub fn setStencilImage(self: *AnySprite, stencil: *graphics.Bitmap, tile: bool) void {
-        plt.pd.sprite_setStencilImage(self, stencil, @intFromBool(tile));
+        if (comptime !pdapi.sdkIsAtLeast(1, 7, 0)) @compileError("setStencilImage only supported with SDK version >=1.7");
+        plt.pd.sprite_setStencilImage(@ptrCast(self), @ptrCast(stencil), @intFromBool(tile));
     }
 };
 

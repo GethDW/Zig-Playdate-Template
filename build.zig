@@ -42,15 +42,44 @@ pub fn buildPDX(
     );
 }
 
+fn getSdkPath(b: *Build, optional_path: ?[]const u8) []const u8 {
+    return optional_path orelse
+        b.env_map.get("PLAYDATE_SDK_PATH") orelse
+        std.debug.panic("failed to find PlaydateSDK, consider setting $PLAYDATE_SDK_PATH", .{});
+}
 pub fn build(b: *Build) !void {
     const optimize = b.standardOptimizeOption(.{});
+    const sdk_path = getSdkPath(b, b.option([]const u8, "sdk_path", "Path to PlaydateSDK, default is to use $PLAYDATE_SDK_PATH"));
+    const sdk_version = blk: {
+        const version_path = b.pathJoin(&.{ sdk_path, "VERSION.txt" });
+        const file = std.fs.openFileAbsolute(version_path, .{}) catch |e|
+            std.debug.panic("failed to find PlaydateSDK version file {s} ({s})", .{ version_path, @errorName(e) });
+        var buf: [100]u8 = undefined;
+        const str_len = file.readAll(&buf) catch |e|
+            std.debug.panic("failed to read PlaydateSDK version ({s})", .{@errorName(e)});
+        const str = buf[0 .. str_len - 1]; // file ends with a newline.
+        break :blk std.SemanticVersion.parse(str) catch |e|
+            std.debug.panic("invalid PlaydateSDK version '{s}' ({s})", .{ str, @errorName(e) });
+    };
+    const config = blk: {
+        const config = b.addOptions();
+        config.addOption([]const u8, "sdk_path", sdk_path);
+        config.addOption(std.SemanticVersion, "sdk_version", sdk_version);
+        break :blk config.createModule();
+    };
 
     const raw_api = b.addModule("playdate_raw", .{
         .source_file = .{ .path = "src/api/raw.zig" },
+        .dependencies = &.{
+            .{ .name = "config", .module = config },
+        },
     });
     const api = b.addModule("playdate", .{
         .source_file = .{ .path = "src/api.zig" },
-        .dependencies = &.{.{ .name = "playdate_raw", .module = raw_api }},
+        .dependencies = &.{
+            .{ .name = "playdate_raw", .module = raw_api },
+            .{ .name = "config", .module = config },
+        },
     });
 
     const pdx = PlaydateExecutable.create(
@@ -145,10 +174,7 @@ pub const PlaydateExecutable = struct {
             .cpu_features = "cortex_m7-fp64-fp_armv8d16-fpregs64-vfp2-vfp3d16-vfp4d16",
         }) catch unreachable;
 
-        const sdk_path = if (options.sdk_path) |p|
-            b.dupe(p)
-        else
-            b.env_map.get("PLAYDATE_SDK_PATH") orelse @panic("missing sdk path");
+        const sdk_path = getSdkPath(b, options.sdk_path);
         const self = b.allocator.create(PlaydateExecutable) catch @panic("OOM");
         self.* = .{
             .builder = b,
