@@ -41,6 +41,13 @@ pub fn drawLine(x1: i32, y1: i32, x2: i32, y2: i32, width: i32, color: Color) vo
 }
 
 pub const Bitmap = opaque {
+    pub const Flip = enum(c_int) {
+        Unflipped = @intFromEnum(raw.LCDBitmapFlip.BitmapUnflipped),
+        FlippedX = @intFromEnum(raw.LCDBitmapFlip.BitmapFlippedX),
+        FlippedY = @intFromEnum(raw.LCDBitmapFlip.BitmapFlippedY),
+        FlippedXY = @intFromEnum(raw.LCDBitmapFlip.BitmapFlippedXY),
+    };
+
     // newBitmap: *const fn (width: c_int, height: c_int, color: graphics.LCDColor) callconv(.C) ?*graphics.Bitmap,
     pub fn new(width: u16, height: u16, color: Color) error{OutOfMemory}!*Bitmap {
         return plt.pd.graphics_newBitmap(width, height, switch (color) {
@@ -49,11 +56,11 @@ pub const Bitmap = opaque {
         }) orelse error.OutOfMemory;
     }
     // freeBitmap: *const fn (bitmap: ?*graphics.Bitmap) callconv(.C) void,
-    pub fn free(self: *Bitmap) void {
+    pub fn destroy(self: *Bitmap) void {
         plt.pd.graphics_freeBitmap(self);
     }
     // loadBitmap: *const fn (path: [*:0]const u8, outerr: ?*[*:0]const u8) callconv(.C) ?*graphics.Bitmap,
-    pub fn loadBitmap(path: [*:0]const u8) error{FileNotFound}!*Bitmap {
+    pub fn load(path: [*:0]const u8) error{FileNotFound}!*Bitmap {
         var out_err: [*:0]const u8 = undefined;
         if (plt.pd.graphics_loadBitmap(path, &out_err)) |ptr| {
             return ptr;

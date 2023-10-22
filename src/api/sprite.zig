@@ -85,7 +85,7 @@ pub fn Sprite(comptime Userdata: type) type {
             AnySprite.moveBy(@ptrCast(self), dx, dy);
         }
 
-        pub fn setImage(self: *Self, image: *graphics.Bitmap, flip: graphics.BitmapFlip) void {
+        pub fn setImage(self: *Self, image: *graphics.Bitmap, flip: graphics.Bitmap.Flip) void {
             AnySprite.setImage(@ptrCast(self), image, flip);
         }
         pub fn getImage(self: *Self) ?*graphics.Bitmap {
