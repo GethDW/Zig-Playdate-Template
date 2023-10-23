@@ -1,5 +1,6 @@
 const std = @import("std");
 const pdapi = @import("../api.zig");
+const raw = @import("playdate_raw");
 const plt = @import("plt.zig");
 const graphics = pdapi.graphics;
 
@@ -7,7 +8,6 @@ const assert = std.debug.assert;
 const mem = std.mem;
 const Allocator = mem.Allocator;
 
-const raw = @import("playdate_raw");
 // TODO: pub fn print(comptime fmt: []const u8, args: anytype) void
 //       creates a c-style fmt string at comptime and with type checking
 //       then calls log with @call.
@@ -78,7 +78,7 @@ pub const Buttons = packed struct(c_int) {
     const BUTTON_B = (1 << 4);
     const BUTTON_A = (1 << 5);
 
-    pub fn getButtons() struct {
+    pub fn get() struct {
         current: Buttons,
         pushed: Buttons,
         released: Buttons,
@@ -102,11 +102,12 @@ pub const Buttons = packed struct(c_int) {
     }
 };
 
-pub const Peripherals = struct {
+pub const Peripherals = packed struct(c_int) {
     accelerometer: bool = false,
+    _: u31 = false,
 };
 pub fn setPeripheralsEnabled(peripherals: Peripherals) void {
-    var mask: pdapi.PDPeripherals = pdapi.PERIPHERAL_NONE;
+    var mask: raw.PDPeripherals = raw.PERIPHERAL_NONE;
     if (peripherals.accelerometer) mask |= pdapi.PERIPHERAL_ACCELEROMETER;
     plt.pd.system_setPeripheralsEnabled(mask);
 }

@@ -78,6 +78,8 @@ pub fn terminate() !void {
 }
 ```
 
+A list of where to find each of the original C API functions (and whether they are implemented) can be found in [coverage.md](coverage.md).
+
 ## WARNING
 - Not everything has been tested
     - The underlying bindings to the C API are not auto-generated from the C headers, and so could be incorrect. They were originally made with `zig translate-c` by [DanB91](https://github.com/DanB91/Zig-Playdate-Template) and were then modified by Dan and myself. Please open a bug report if any issues arise.

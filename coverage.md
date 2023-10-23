@@ -1,0 +1,503 @@
+All funcions are available under the same namespace (i.e `playdate->graphics->clear` => `playdate.graphics.clear`) unless otherwise stated.
+106/470 (`grep "\- \[x\]" | wc -l`)
+
+- playdate->system
+  - [x] realloc (`allocator`)
+  - [ ] formatString
+  - [ ] logToConsole (`log`, not counted as done since it used C varargs)
+  - [ ] error (`err`, not counted as done since it used C varargs)
+  - [ ] getLanguage
+  - [ ] getCurrentTimeMilliseconds
+  - [ ] getSecondsSinceEpoch
+  - [ ] drawFPS
+  - [x] setUpdateCallback (handled by declaring `pub fn update`)
+  - [x] getButtonState (`Buttons.get`)
+  - [x] setPeripheralsEnabled
+  - [x] getAccelerometer
+  - [x] getCrankChange
+  - [x] getCrankAngle
+  - [x] isCrankDocked
+  - [ ] setCrankSoundsDisabled
+  - [ ] getFlipped
+  - [ ] setAutoLockDisabled
+  - [ ] setMenuImage
+  - [x] addMenuItem (`AnyMenuItem.new`, `MenuItem(T).new`)
+  - [x] addCheckmarkMenuItem (`AnyCheckmarkMenuItem.new`, `CheckmarkMenuItem(T).new`)
+  - [x] addOptionsMenuItem (`AnyOptionsMenuItem.new`, `OptionsMenuItem(T).new`)
+  - [ ] removeAllMenuItems
+  - [ ] removeMenuItem
+  - [x] getMenuItemValue (`getChecked` on checkmark menu items and `getOption` on options menu items)
+  - [x] setMenuItemValue (`setChecked` on checkmark menu items and `setOption` on options menu items)
+  - [x] getMenuItemTitle (method on all menu item types)
+  - [x] setMenuItemTitle (method on all menu item types)
+  - [x] getMenuItemUserdata (`getUserdata` on all typed menu items)
+  - [x] setMenuItemUserdata (`setUserdata` on all typed menu items)
+  - [ ] getReduceFlashing
+  - [ ] getElapsedTime
+  - [ ] resetElapsedTime
+  - [ ] getBatteryPercentage
+  - [ ] getBatteryVoltage
+  - [ ] getTimezoneOffset
+  - [ ] shouldDisplay24HourTime
+  - [ ] convertEpochToDateTime
+  - [ ] convertDateTimeToEpoch
+  - [ ] clearICache
+- playdate->file
+  - [x] geterr (handled with error sets)
+  - [x] listfiles (`listFiles` and `listFilesContext`)
+  - [x] stat
+  - [x] mkdir 
+  - [x] unlink
+  - [x] rename
+  - [x] open (`File.open`)
+  - [x] close (`File.close`)
+  - [x] read (`File.read` and `File.reader`)
+  - [x] write (`File.write` and `File.bufferedWriter`)
+  - [x] flush (`File.Flush`)
+  - [x] tell (`File.tell`)
+  - [x] seek (`File.seek`)
+- playdate->graphics
+  - [x] clear
+  - [ ] setBackgroundColor
+  - [ ] setStencil
+  - [ ] setDrawMode
+  - [ ] setDrawOffset
+  - [ ] setClipRect
+  - [ ] clearClipRect
+  - [ ] setLineCapStyle
+  - [ ] setFont
+  - [ ] setTextTracking
+  - [ ] pushContext
+  - [ ] popContext
+  - [ ] drawBitmap
+  - [ ] tileBitmap
+  - [x] drawLine
+  - [ ] fillTriangle
+  - [ ] drawRect
+  - [ ] fillRect
+  - [x] drawEllipse
+  - [ ] fillEllipse
+  - [ ] drawScaledBitmap
+  - [ ] drawText
+  - [x] newBitmap (`Bitmap.new`)
+  - [x] freeBitmap (`Bitmap.destroy`)
+  - [x] loadBitmap (`Bitmap.load`)
+  - [x] copyBitmap (`Bitmap.copy`)
+  - [x] loadIntoBitmap (`Bitmap.loadInto`)
+  - [x] getBitmapData (`Bitmap.getData`)
+  - [ ] clearBitmap
+  - [ ] rotatedBitmap
+  - [ ] newBitmapTable
+  - [ ] freeBitmapTable
+  - [ ] loadBitmapTable
+  - [ ] loadIntoBitmapTable
+  - [ ] getTableBitmap
+  - [ ] loadFont
+  - [ ] getFontPage
+  - [ ] getPageGlyph
+  - [ ] getGlyphKerning
+  - [ ] getTextWidth
+  - [ ] getFrame
+  - [ ] getDisplayFrame
+  - [ ] getDebugBitmap
+  - [ ] copyFrameBufferBitmap
+  - [ ] markUpdatedRows
+  - [ ] display
+  - [ ] setColorToPattern
+  - [ ] checkMaskCollision
+  - [ ] setScreenClipRect
+  - [ ] fillPolygon
+  - [ ] getFontHeight
+  - [ ] getDisplayBufferBitmap
+  - [ ] drawRotatedBitmap
+  - [ ] setTextLeading
+  - [ ] setBitmapMask
+  - [ ] getBitmapMask
+  - [ ] setStencilImage
+  - [ ] makeFontFromData
+- playdate->sprite
+  - [ ] setAlwaysRedraw
+  - [ ] addDirtyRect
+  - [x] drawSprites
+  - [x] updateAndDrawSprites
+  - [x] newSprite (`new` method on `AnySprite` and `Sprite(T)`)
+  - [x] freeSprite (`destory` method on all sprite types)
+  - [x] copy (method on all sprite types)
+  - [x] addSprite (`add` method on all sprite types)
+  - [x] removeSprite (`remove` method on all sprite types)
+  - [x] removeSprites
+  - [x] removeAllSprites
+  - [x] getSpriteCount
+  - [x] setBounds (method on all sprite types)
+  - [x] getBounds (method on all sprite types)
+  - [x] moveTo (method on all sprite types)
+  - [x] moveBy (method on all sprite types)
+  - [x] setImage (method on all sprite types)
+  - [x] getImage (method on all sprite types)
+  - [x] setSize (method on all sprite types)
+  - [x] setZIndex (method on all sprite types)
+  - [x] getZIndex (method on all sprite types)
+  - [x] setDrawMode (method on all sprite types)
+  - [x] setImageFlip (method on all sprite types)
+  - [x] getImageFlip (method on all sprite types)
+  - [x] setStencil (method on all sprite types)
+  - [x] setClipRect (method on all sprite types)
+  - [x] clearClipRect (method on all sprite types)
+  - [x] setClipRectsInRange
+  - [x] clearClipRectsInRange
+  - [x] setUpdatesEnabled (method on all sprite types)
+  - [x] updatesEnabled (`getUpdatesEnabled` method on all sprite types)
+  - [x] setCollisionsEnabled (method on all sprite types)
+  - [x] collisionsEnabled (`getCollisionsEnabled` method on all sprite types)
+  - [x] setVisible (method on all sprite types)
+  - [x] isVisible (method on all sprite types)
+  - [x] setOpaque (method on all sprite types)
+  - [x] markDirty (method on all sprite types)
+  - [x] setTag (method on all sprite types)
+  - [x] getTag (method on all sprite types)
+  - [x] setIgnoresDrawOffset (method on all sprite types)
+  - [x] setUpdateFunction (method on all sprite types)
+  - [x] setDrawFunction (method on all sprite types)
+  - [x] getPosition (method on all sprite types)
+  - [x] resetCollisionWorld
+  - [x] setCollideRect (method on all sprite types)
+  - [x] getCollideRect (method on all sprite types)
+  - [x] clearCollideRect (method on all sprite types)
+  - [x] setCollisionResponseFunction (method on all sprite types)
+  - [x] checkCollisions (method on all sprite types)
+  - [x] moveWithCollisions (method on all sprite types)
+  - [x] querySpritesAtPoint (`queary.spritesAtPoint`)
+  - [x] querySpritesInRect (`queary.spritesInRect`)
+  - [x] querySpritesAlongLine (`queary.spritesAlongLine`)
+  - [x] querySpriteInfoAlongLine (`queary.spritesInfoAlongLine`)
+  - [x] overlappingSprites (method on all sprite types)
+  - [x] allOverlappingSprites (`query.allOverlappingSprites`)
+  - [x] setStencilPattern (method on all sprite types)
+  - [x] clearStencil (method on all sprite types)
+  - [x] setUserdata (method on `Sprite(T)`)
+  - [x] getUserdata (method on `Sprite(T)`)
+  - [x] setStencilImage (method on all sprite types)
+  - video (`VideoPlayer`)
+    - [x] loadVideo (`load`)
+    - [x] freePlayer (`destroy`)
+    - [x] setContext
+    - [x] useScreenContext
+    - [x] renderFrame
+    - [x] getError (handled with error sets)
+    - [x] getInfo
+    - [x] getContext
+- playdate->display
+  - [ ] getWidth
+  - [ ] getHeight
+  - [ ] setRefreshRate
+  - [ ] setInverted
+  - [ ] setScale
+  - [ ] setMosaic
+  - [ ] setFlipped
+  - [ ] setOffset
+- playdate->lua
+  - [ ] addFunction
+  - [ ] registerClass
+  - [ ] pushFunction
+  - [ ] indexMetatable
+  - [ ] stop
+  - [ ] start
+  - [ ] getArgCount
+  - [ ] getArgType
+  - [ ] argIsNil
+  - [ ] getArgBool
+  - [ ] getArgInt
+  - [ ] getArgFloat
+  - [ ] getArgString
+  - [ ] getArgBytes
+  - [ ] getArgObject
+  - [ ] getBitmap
+  - [ ] getSprite
+  - [ ] pushNil
+  - [ ] pushBool
+  - [ ] pushInt
+  - [ ] pushFloat
+  - [ ] pushString
+  - [ ] pushBytes
+  - [ ] pushBitmap
+  - [ ] pushSprite
+  - [ ] pushObject
+  - [ ] retainObject
+  - [ ] releaseObject
+  - [ ] setObjectValue
+  - [ ] getObjectValue
+  - [ ] callFunction_deprecated
+  - [ ] callFunction
+- playdate->json
+  - [ ] initEncoder
+  - [ ] decode
+  - [ ] decodeString
+- playdate->scoreboards
+  - [ ] addScore
+  - [ ] getPersonalBest
+  - [ ] freeScore
+  - [ ] getScoreboards
+  - [ ] freeBoardsList
+  - [ ] getScores
+  - [ ] freeScoresList
+- playdate->sound
+  - [ ] getCurrentTime
+  - [ ] addSource
+  - [ ] getDefaultChannel
+  - [ ] addChannel
+  - [ ] removeChannel
+  - [ ] setMicCallback
+  - [ ] getHeadphoneState
+  - [ ] setOutputsActive
+  - [ ] removeSource
+  - channel
+    - [ ] newChannel
+    - [ ] freeChannel
+    - [ ] addSource
+    - [ ] removeSource
+    - [ ] addCallbackSource
+    - [ ] addEffect
+    - [ ] removeEffect
+    - [ ] setVolume
+    - [ ] getVolume
+    - [ ] setVolumeModulator
+    - [ ] getVolumeModulator
+    - [ ] setPan
+    - [ ] setPanModulator
+    - [ ] getPanModulator
+    - [ ] getDryLevelSignal
+    - [ ] getWetLevelSignal
+  - fileplayer
+    - [ ] newPlayer
+    - [ ] freePlayer
+    - [ ] loadIntoPlayer
+    - [ ] setBufferLength
+    - [ ] play
+    - [ ] isPlaying
+    - [ ] pause
+    - [ ] stop
+    - [ ] setVolume
+    - [ ] getVolume
+    - [ ] getLength
+    - [ ] setOffset
+    - [ ] setRate
+    - [ ] setLoopRange
+    - [ ] didUnderrun
+    - [ ] setFinishCallback
+    - [ ] setLoopCallback
+    - [ ] getOffset
+    - [ ] getRate
+    - [ ] setStopOnUnderrun
+    - [ ] fadeVolume
+    - [ ] setMP3StreamSource
+  - sample
+    - [ ] newSampleBuffer
+    - [ ] loadIntoSample
+    - [ ] load
+    - [ ] newSampleFromData
+    - [ ] getData
+    - [ ] freeSample
+    - [ ] getLength
+  - sampleplayer
+    - [ ] newPlayer
+    - [ ] freePlayer
+    - [ ] setSample
+    - [ ] play
+    - [ ] isPlaying
+    - [ ] stop
+    - [ ] setVolume
+    - [ ] getVolume
+    - [ ] getLength
+    - [ ] setOffset
+    - [ ] setRate
+    - [ ] setPlayRange
+    - [ ] setFinishCallback
+    - [ ] setLoopCallback
+    - [ ] getOffset
+    - [ ] getRate
+    - [ ] setPaused
+  - synth
+    - [ ] newSynth
+    - [ ] freeSynth
+    - [ ] setWaveform
+    - [ ] setGenerator
+    - [ ] setSample
+    - [ ] setAttackTime
+    - [ ] setDecayTime
+    - [ ] setSustainLevel
+    - [ ] setReleaseTime
+    - [ ] setTranspose
+    - [ ] setFrequencyModulator
+    - [ ] getFrequencyModulator
+    - [ ] setAmplitudeModulator
+    - [ ] getAmplitudeModulator
+    - [ ] getParameterCount
+    - [ ] setParameter
+    - [ ] setParameterModulator
+    - [ ] getParameterModulator
+    - [ ] playNote
+    - [ ] playMIDINote
+    - [ ] noteOff
+    - [ ] stop
+    - [ ] setVolume
+    - [ ] getVolume
+    - [ ] isPlaying
+    - [ ] getEnvelope
+  - sequence
+    - [ ] newSequence
+    - [ ] freeSequence
+    - [ ] loadMidiFile
+    - [ ] getTime
+    - [ ] setTime
+    - [ ] setLoops
+    - [ ] getTempo
+    - [ ] setTempo
+    - [ ] getTrackCount
+    - [ ] addTrack
+    - [ ] getTrackAtIndex
+    - [ ] setTrackAtIndex
+    - [ ] allNotesOff
+    - [ ] isPlaying
+    - [ ] getLength
+    - [ ] play
+    - [ ] stop
+    - [ ] getCurrentStep
+    - [ ] setCurrentStep
+  - effect
+    - [ ] newEffect
+    - [ ] freeEffect
+    - [ ] setMix
+    - [ ] setMixModulator
+    - [ ] getMixModulator
+    - [ ] setUserdata
+    - [ ] getUserdata
+    - twopolefilter
+      - [ ] newFilter
+      - [ ] freeFilter
+      - [ ] setType
+      - [ ] setFrequency
+      - [ ] setFrequencyModulator
+      - [ ] getFrequencyModulator
+      - [ ] setGain
+      - [ ] setResonance
+      - [ ] setResonanceModulator
+      - [ ] getResonanceModulator
+    - onepolefilter
+      - [ ] newFilter
+      - [ ] freeFilter
+      - [ ] setParameter
+      - [ ] setParameterModulator
+      - [ ] getParameterModulator
+    - bitcrusher
+      - [ ] newBitCrusher
+      - [ ] freeBitCrusher
+      - [ ] setAmount
+      - [ ] setAmountModulator
+      - [ ] getAmountModulator
+      - [ ] setUndersampling
+      - [ ] setUndersampleModulator
+      - [ ] getUndersampleModulator
+    - ringmodulator
+      - [ ] newRingmod
+      - [ ] freeRingmod
+      - [ ] setFrequency
+      - [ ] setFrequencyModulator
+      - [ ] getFrequencyModulator
+    - delayline
+      - [ ] newDelayLine
+      - [ ] freeDelayLine
+      - [ ] setLength
+      - [ ] setFeedback
+      - [ ] addTap
+      - [ ] freeTap
+      - [ ] setTapDelay
+      - [ ] setTapDelayModulator
+      - [ ] getTapDelayModulator
+      - [ ] setTapChannelsFlipped
+    - overdrive
+      - [ ] newOverdrive
+      - [ ] freeOverdrive
+      - [ ] setGain
+      - [ ] setLimit
+      - [ ] setLimitModulator
+      - [ ] getLimitModulator
+      - [ ] setOffset
+      - [ ] setOffsetModulator
+      - [ ] getOffsetModulator
+  - lfo
+    - [ ] newLFO
+    - [ ] freeLFO
+    - [ ] setType
+    - [ ] setRate
+    - [ ] setPhase
+    - [ ] setCenter
+    - [ ] setDepth
+    - [ ] setArpeggiation
+    - [ ] setFunction
+    - [ ] setDelay
+    - [ ] setRetrigger
+    - [ ] getValue
+    - [ ] setGlobal
+  - envelope
+    - [ ] newEnvelope
+    - [ ] freeEnvelope
+    - [ ] setAttack
+    - [ ] setDecay
+    - [ ] setSustain
+    - [ ] setRelease
+    - [ ] setLegato
+    - [ ] setRetrigger
+    - [ ] getValue
+    - [ ] setCurvature
+    - [ ] setVelocitySensitivity
+    - [ ] setRateScaling
+  - source
+    - [ ] setVolume
+    - [ ] getVolume
+    - [ ] isPlaying
+    - [ ] setFinishCallback
+  - controlsignal
+    - [ ] newSignal
+    - [ ] freeSignal
+    - [ ] clearEvents
+    - [ ] addEvent
+    - [ ] removeEvent
+    - [ ] getMIDIControllerNumber
+  - track
+    - [ ] newTrack
+    - [ ] freeTrack
+    - [ ] setInstrument
+    - [ ] getInstrument
+    - [ ] addNoteEvent
+    - [ ] removeNoteEvent
+    - [ ] clearNotes
+    - [ ] getControlSignalCount
+    - [ ] getControlSignal
+    - [ ] clearControlEvents
+    - [ ] getPolyphony
+    - [ ] activeVoiceCount
+    - [ ] setMuted
+    - [ ] getLength
+    - [ ] getIndexForStep
+    - [ ] getNoteAtIndex
+    - [ ] getSignalForController
+  - instrument
+    - [ ] newInstrument
+    - [ ] freeInstrument
+    - [ ] addVoice
+    - [ ] playNote
+    - [ ] playMIDINote
+    - [ ] setPitchBend
+    - [ ] setPitchBendRange
+    - [ ] setTranspose
+    - [ ] noteOff
+    - [ ] allNotesOff
+    - [ ] setVolume
+    - [ ] getVolume
+    - [ ] activeVoiceCount
+  - signal
+    - [ ] newSignal
+    - [ ] freeSignal
+    - [ ] getValue
+    - [ ] setValueScale
+    - [ ] setValueOffset

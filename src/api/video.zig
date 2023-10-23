@@ -10,7 +10,7 @@ pub const VideoPlayer = opaque {
         return if (plt.pd.graphics_video_loadVideo(path)) |ptr| @ptrCast(ptr) else error.LoadFail;
     }
 
-    pub fn free(self: *VideoPlayer) void {
+    pub fn destroy(self: *VideoPlayer) void {
         plt.pd.graphics_video_freePlayer(@ptrCast(self));
     }
 

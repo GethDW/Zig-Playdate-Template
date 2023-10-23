@@ -120,13 +120,13 @@ pub fn Sprite(comptime Userdata: type) type {
         pub fn setUpdatesEnabled(self: *Sprite, enabled: bool) void {
             self.any().setUpdatesEnabled(enabled);
         }
-        pub fn updatesEnabled(self: *Sprite) bool {
+        pub fn getUpdatesEnabled(self: *Sprite) bool {
             return AnySprite.updatesEnabled(@ptrCast(self));
         }
         pub fn setCollisionsEnabled(self: *Self, enabled: bool) void {
             AnySprite.setCollisionsEnabled(@ptrCast(self), enabled);
         }
-        pub fn collisionsEnabled(self: *Self) bool {
+        pub fn getCollisionsEnabled(self: *Self) bool {
             return AnySprite.collisionsEnabled(@ptrCast(self));
         }
         pub fn setVisible(self: *Self, enabled: bool) void {
@@ -486,7 +486,7 @@ pub const query = struct {
         return ptr[0..@intCast(len)];
     }
     /// caller owns memory
-    pub fn spriteInfoAlongLine(x1: f32, y1: f32, x2: f32, y2: f32) []Info {
+    pub fn spritesInfoAlongLine(x1: f32, y1: f32, x2: f32, y2: f32) []Info {
         var len: c_int = undefined;
         const ptr = plt.pd.sprite_querySpriteInfoAlongLine(x1, y1, x2, y2, &len);
         return ptr[0..@intCast(len)];
