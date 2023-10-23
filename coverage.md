@@ -1,5 +1,5 @@
 All funcions are available under the same namespace (i.e `playdate->graphics->clear` => `playdate.graphics.clear`) unless otherwise stated.
-106/470 (`grep "\- \[x\]" | wc -l`)
+109/470 (`$ grep "\- \[x\]" | wc -l`)
 
 - playdate->system
   - [x] realloc (`allocator`)
@@ -115,68 +115,68 @@ All funcions are available under the same namespace (i.e `playdate->graphics->cl
   - [ ] getBitmapMask
   - [ ] setStencilImage
   - [ ] makeFontFromData
-- playdate->sprite
-  - [ ] setAlwaysRedraw
-  - [ ] addDirtyRect
+- playdate->sprite (functions which act on sprites are methods on `Sprite(T)` and `AnySprite`)
+  - [x] setAlwaysRedraw
+  - [x] addDirtyRect
   - [x] drawSprites
   - [x] updateAndDrawSprites
-  - [x] newSprite (`new` method on `AnySprite` and `Sprite(T)`)
-  - [x] freeSprite (`destory` method on all sprite types)
-  - [x] copy (method on all sprite types)
-  - [x] addSprite (`add` method on all sprite types)
-  - [x] removeSprite (`remove` method on all sprite types)
+  - [x] newSprite (`new`)
+  - [x] freeSprite (`destory`)
+  - [x] copy
+  - [x] addSprite (`add`)
+  - [x] removeSprite (`remove`)
   - [x] removeSprites
   - [x] removeAllSprites
   - [x] getSpriteCount
-  - [x] setBounds (method on all sprite types)
-  - [x] getBounds (method on all sprite types)
-  - [x] moveTo (method on all sprite types)
-  - [x] moveBy (method on all sprite types)
-  - [x] setImage (method on all sprite types)
-  - [x] getImage (method on all sprite types)
-  - [x] setSize (method on all sprite types)
-  - [x] setZIndex (method on all sprite types)
-  - [x] getZIndex (method on all sprite types)
-  - [x] setDrawMode (method on all sprite types)
-  - [x] setImageFlip (method on all sprite types)
-  - [x] getImageFlip (method on all sprite types)
-  - [x] setStencil (method on all sprite types)
-  - [x] setClipRect (method on all sprite types)
-  - [x] clearClipRect (method on all sprite types)
+  - [x] setBounds
+  - [x] getBounds
+  - [x] moveTo
+  - [x] moveBy
+  - [x] setImage
+  - [x] getImage
+  - [x] setSize
+  - [x] setZIndex
+  - [x] getZIndex
+  - [x] setDrawMode
+  - [x] setImageFlip
+  - [x] getImageFlip
+  - [x] setStencil
+  - [x] setClipRect
+  - [x] clearClipRect
   - [x] setClipRectsInRange
   - [x] clearClipRectsInRange
-  - [x] setUpdatesEnabled (method on all sprite types)
-  - [x] updatesEnabled (`getUpdatesEnabled` method on all sprite types)
-  - [x] setCollisionsEnabled (method on all sprite types)
-  - [x] collisionsEnabled (`getCollisionsEnabled` method on all sprite types)
-  - [x] setVisible (method on all sprite types)
-  - [x] isVisible (method on all sprite types)
-  - [x] setOpaque (method on all sprite types)
-  - [x] markDirty (method on all sprite types)
-  - [x] setTag (method on all sprite types)
-  - [x] getTag (method on all sprite types)
-  - [x] setIgnoresDrawOffset (method on all sprite types)
-  - [x] setUpdateFunction (method on all sprite types)
-  - [x] setDrawFunction (method on all sprite types)
-  - [x] getPosition (method on all sprite types)
+  - [x] setUpdatesEnabled
+  - [x] updatesEnabled (`getUpdatesEnabled`)
+  - [x] setCollisionsEnabled
+  - [x] collisionsEnabled (`getCollisionsEnabled`)
+  - [x] setVisible
+  - [x] isVisible
+  - [x] setOpaque
+  - [x] markDirty
+  - [x] setTag
+  - [x] getTag
+  - [x] setIgnoresDrawOffset
+  - [x] setUpdateFunction
+  - [x] setDrawFunction
+  - [x] getPosition
   - [x] resetCollisionWorld
-  - [x] setCollideRect (method on all sprite types)
-  - [x] getCollideRect (method on all sprite types)
-  - [x] clearCollideRect (method on all sprite types)
-  - [x] setCollisionResponseFunction (method on all sprite types)
-  - [x] checkCollisions (method on all sprite types)
-  - [x] moveWithCollisions (method on all sprite types)
+  - [x] setCollideRect
+  - [x] getCollideRect
+  - [x] clearCollideRect
+  - [x] setCollisionResponseFunction
+  - [x] checkCollisions
+  - [x] moveWithCollisions
   - [x] querySpritesAtPoint (`queary.spritesAtPoint`)
   - [x] querySpritesInRect (`queary.spritesInRect`)
   - [x] querySpritesAlongLine (`queary.spritesAlongLine`)
   - [x] querySpriteInfoAlongLine (`queary.spritesInfoAlongLine`)
-  - [x] overlappingSprites (method on all sprite types)
+  - [x] overlappingSprites
   - [x] allOverlappingSprites (`query.allOverlappingSprites`)
-  - [x] setStencilPattern (method on all sprite types)
-  - [x] clearStencil (method on all sprite types)
-  - [x] setUserdata (method on `Sprite(T)`)
-  - [x] getUserdata (method on `Sprite(T)`)
-  - [x] setStencilImage (method on all sprite types)
+  - [x] setStencilPattern
+  - [x] clearStencil
+  - [x] setUserdata (`Sprite(T)` only)
+  - [x] getUserdata (`Sprite(T)` only)
+  - [x] setStencilImage
   - video (`VideoPlayer`)
     - [x] loadVideo (`load`)
     - [x] freePlayer (`destroy`)
@@ -197,7 +197,7 @@ All funcions are available under the same namespace (i.e `playdate->graphics->cl
   - [ ] setOffset
 - playdate->lua
   - [ ] addFunction
-  - [ ] registerClass
+  - [x] registerClass
   - [ ] pushFunction
   - [ ] indexMetatable
   - [ ] stop
