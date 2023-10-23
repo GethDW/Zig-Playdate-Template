@@ -7,13 +7,13 @@ First, your `build.zig.zon` should look something like this:
 .{
     .name = "example",
     .version = "0.0.0",
-    .paths = .{ "." },
+    .paths = .{"."},
     .dependencies = .{
         .playdate = .{
             .url = "git+https://github.com/GethDW/playdate-zig#[LATEST_COMMIT]",
             .hash = "[HASH_OF_CONTENTS]", // Note: you can omit the `hash` field then run `zig build`
                                           // and the resulting error will tell you what the hash should be.
-        }
+        },
     },
 }
 ```
@@ -42,13 +42,13 @@ pub fn build(b: *std.Build) void {
 This build script will use the `PLAYDATE_SDK_PATH` environment variable to locate the PlaydateSDK, but you can modify the above in a few ways to avoid this:
 ```zig
 const playdate = b.dependency("playdate", .{
-     .sdk_path = @as([]const u8, "/path/to/sdk"),
+    .sdk_path = @as([]const u8, "/path/to/sdk"),
 });
 ```
 Or allow users of you build script to provide a path with:
 ```zig
 const playdate = b.dependency("playdate", .{
-     .sdk_path = b.options([]const u8, "sdk_path", "Path to PlaydateSDK") orelse b.env_map.get("PLAYDATE_SDK_PATH").?,
+    .sdk_path = b.options([]const u8, "sdk_path", "Path to PlaydateSDK") orelse b.env_map.get("PLAYDATE_SDK_PATH").?,
 });
 ```
 Now in `src/main.zig` you can make your game:
@@ -66,7 +66,7 @@ pub fn init() !void {
     spr.setUserdata(x);
     const image = try Bitmap.load("player");
     spr.setImage(image, .Unflipped);
-    spr.add(); 
+    spr.add();
 }
 pub fn update() !void {
     // add your own code here.
